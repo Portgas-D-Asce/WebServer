@@ -16,6 +16,8 @@ add_executable(server server.cpp
         tcp_connection.h
         thread_pool.cpp
         thread_pool.h
+        handler.cpp
+        handler.h
 )
 
 add_executable(client client.cpp

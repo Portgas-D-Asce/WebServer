@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include "socket.h"
 #include "tcp_connection.h"
+#include "thread_pool.h"
 
 template<typename Multiplex>
 class TcpServer {
@@ -21,8 +22,10 @@ private:
     std::shared_ptr<Socket> _sock;
     std::map<int, std::shared_ptr<TcpConnection<Multiplex>>> _clients;
     std::shared_ptr<Multiplex> _multiplex;
+    std::shared_ptr<ThreadPool> _pool;
 public:
-    explicit TcpServer(int port) {
+    explicit TcpServer(int port)
+        : _pool(std::make_shared<ThreadPool>(4)) {
         _sock = std::make_shared<Socket>();
         _multiplex = std::make_shared<Multiplex>(*this);
         struct sockaddr_in addr = Socket::sock_address("127.0.0.1", port);
@@ -41,7 +44,7 @@ public:
             perror("add client socket");
             return -1;
         }
-        _clients[fd->fd()] = std::make_shared<TcpConnection<Multiplex>>(fd, client, _multiplex);
+        _clients[fd->fd()] = std::make_shared<TcpConnection<Multiplex>>(fd, client, _multiplex, _pool);
         _clients[fd->fd()]->sock()->sock_nonblock();
         printf("Welcome home %s : %d\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
 
@@ -81,13 +84,12 @@ public:
     int recv_msg(int fd) {
         int n = _clients[fd]->recv();
         printf("%d recv len(%d) message\n", fd, n);
-        if(n == 0) {
+        if(n <= 0) {
             disconnect(fd);
-            return 0;
-        }
-        if(n == -1) {
-            printf("recv error: %d\n", fd);
-            return -1;
+            if(n == -1) {
+                printf("recv error: %d\n", fd);
+                return -1;
+            }
         }
         return n;
     }
