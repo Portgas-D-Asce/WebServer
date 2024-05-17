@@ -1,0 +1,4 @@
+/Users/pk/Source/WebServer/cmake-build-debug/CMakeFiles/server.dir
+/Users/pk/Source/WebServer/cmake-build-debug/CMakeFiles/client.dir
+/Users/pk/Source/WebServer/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/pk/Source/WebServer/cmake-build-debug/CMakeFiles/rebuild_cache.dir
