@@ -73,6 +73,7 @@ public:
             printf("%d\n", cnt);
             ++zzz;
             printf("zzz = %d\n", zzz);
+            sleep(1);
         }
     }
 };

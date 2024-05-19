@@ -7,7 +7,7 @@
 #include <arpa/inet.h>
 #include <memory>
 #include "socket.h"
-#include "thread_pool.h"
+#include "thread_pool_copy.h"
 #include "handler.h"
 
 template<typename Multiplex>
@@ -30,6 +30,7 @@ public:
         const std::shared_ptr<Multiplex>& multiplex,
         const std::shared_ptr<ThreadPool>& pool)
         : _sock(fd), _addr(addr), _multiplex(multiplex), _pool(pool) {
+        printf("a new tcp connection\n");
         _multiplex->add(_sock->fd());
         _status = 0;
         _sz = 0;
@@ -50,6 +51,7 @@ public:
 
     int recv() {
         int total = 0;
+        printf("555\n");
         while(true) {
             if(_status == 0) {
                 //int type = 0;

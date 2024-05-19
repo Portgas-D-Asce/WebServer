@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.26)
 project(WebServer)
 
 set(CMAKE_CXX_STANDARD 17)
-link_directories(${PROJECT_SOURCE_DIR}/multiplex/)
-link_directories(${PROJECT_SOURCE_DIR}/dispatch/)
 
 add_executable(server server.cpp
         tcp_server.cpp
@@ -14,10 +12,14 @@ add_executable(server server.cpp
         socket.h
         tcp_connection.cpp
         tcp_connection.h
-        thread_pool.cpp
-        thread_pool.h
+        thread_pool_copy.cpp
+        thread_pool_copy.h
         handler.cpp
         handler.h
+        main_reactor.cpp
+        main_reactor.h
+        sub_reactor.cpp
+        sub_reactor.h
 )
 
 add_executable(client client.cpp

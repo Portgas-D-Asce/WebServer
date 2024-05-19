@@ -14,61 +14,41 @@
 #include <fcntl.h>
 #include "socket.h"
 #include "tcp_connection.h"
-#include "thread_pool.h"
+#include "thread_pool_copy.h"
+#include "main_reactor.h"
 
-template<typename Multiplex>
+template<typename MainMultiplex, typename SubMultiplex>
 class TcpServer {
 private:
+    using MReactor = MainReactor<MainMultiplex, SubMultiplex>;
     std::shared_ptr<Socket> _sock;
-    std::map<int, std::shared_ptr<TcpConnection<Multiplex>>> _clients;
-    std::shared_ptr<Multiplex> _multiplex;
-    std::shared_ptr<ThreadPool> _pool;
+    std::shared_ptr<MReactor> _main_reactor;
+
 public:
     explicit TcpServer(int port)
-        : _pool(std::make_shared<ThreadPool>(4)) {
-        _sock = std::make_shared<Socket>();
-        _multiplex = std::make_shared<Multiplex>(*this);
+        : _sock(std::make_shared<Socket>()),
+        _main_reactor(std::make_shared<MReactor>(_sock)) {
         struct sockaddr_in addr = Socket::sock_address("127.0.0.1", port);
         _sock->sock_bind(addr);
     }
 
     void start() {
+        printf("start listen\n");
         _sock->sock_listen(20);
-        _multiplex->dispatch();
+        printf("start main reactor\n");
+        _main_reactor->start();
     }
 
-    int connect() {
-        struct sockaddr_in client{};
-        auto fd = _sock->sock_accept(client);
-        if(!fd) {
-            perror("add client socket");
-            return -1;
-        }
-        _clients[fd->fd()] = std::make_shared<TcpConnection<Multiplex>>(fd, client, _multiplex, _pool);
-        _clients[fd->fd()]->sock()->sock_nonblock();
-        printf("Welcome home %s : %d\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
-
-        return fd->fd();
-    }
-
-    void disconnect(int fd) {
-        printf("Goodbye %s : %d\n",
-               inet_ntoa(_clients[fd]->addr().sin_addr),
-               ntohs(_clients[fd]->addr().sin_port));
-
-        _clients.erase(fd);
-    }
-
-    int recv_head(int fd) {
-        int type = 0, sz = 0;
-        int cnt = _clients[fd]->sock()->sock_recv((char *)&type, sizeof(type));
-        if(cnt <= 0) return cnt;
-        type = ntohl(type);
-        cnt = _clients[fd]->sock()->sock_recv((char *)&sz, sizeof(sz));
-        if(cnt <= 0) return cnt;
-        sz = ntohll(sz);
-        return 12;
-    }
+    //int recv_head(int fd) {
+    //    int type = 0, sz = 0;
+    //    int cnt = _clients[fd]->sock()->sock_recv((char *)&type, sizeof(type));
+    //    if(cnt <= 0) return cnt;
+    //    type = ntohl(type);
+    //    cnt = _clients[fd]->sock()->sock_recv((char *)&sz, sizeof(sz));
+    //    if(cnt <= 0) return cnt;
+    //    sz = ntohll(sz);
+    //    return 12;
+    //}
 
     //int recv_msg(int fd, long long sz) {
     //    printf("Recv from [%s, %d]: ",
@@ -80,19 +60,6 @@ public:
     //    printf("%d: %s\n", cnt, buf);
     //    return cnt;
     //}
-
-    int recv_msg(int fd) {
-        int n = _clients[fd]->recv();
-        printf("%d recv len(%d) message\n", fd, n);
-        if(n <= 0) {
-            disconnect(fd);
-            if(n == -1) {
-                printf("recv error: %d\n", fd);
-                return -1;
-            }
-        }
-        return n;
-    }
 
     int listen_fd() const {
         return _sock->fd();
