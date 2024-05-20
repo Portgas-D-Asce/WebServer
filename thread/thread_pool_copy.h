@@ -17,13 +17,22 @@
 
 class ThreadPool {
 public:
-    explicit ThreadPool(size_t cnt = std::thread::hardware_concurrency());
-
     template<typename F, typename... Args>
     auto enqueue(F&& f, Args&&... args)
         -> std::future<typename std::result_of<F(Args...)>::type>;
 
     ~ThreadPool();
+
+    static ThreadPool& get_instance() {
+        static std::once_flag flag;
+        call_once(flag, [&](){
+            _instance = std::unique_ptr<ThreadPool>(
+                new ThreadPool(4));
+        });
+        return *_instance;
+    }
+private:
+    explicit ThreadPool(size_t cnt);
 private:
     // need to keep track of threads so we can join them
     std::vector<std::thread> _workers;
@@ -33,13 +42,18 @@ private:
     std::mutex _mtx;
     std::condition_variable _cv;
     bool _stop;
+
+    static std::unique_ptr<ThreadPool> _instance;
 };
+
+std::unique_ptr<ThreadPool> ThreadPool::_instance = nullptr;
 
 // the constructor just launches some amount of workers
 inline ThreadPool::ThreadPool(size_t cnt) : _stop(false) {
     auto routing = [this]() {
         for (;;) {
             std::function<void()> task;
+            printf("thread id: %d\n", std::this_thread::get_id());
 
             {
                 std::unique_lock<std::mutex> lock(this->_mtx);

@@ -7,23 +7,20 @@
 #include <memory>
 #include <map>
 #include <functional>
-#include "socket.h"
-#include "thread_pool_copy.h"
-#include "tcp_connection.h"
+#include "../common/socket.h"
+#include "../common/connection.h"
 
 template<typename Multiplex>
 class SubReactor {
 private:
-    std::map<int, std::shared_ptr<TcpConnection<Multiplex>>> _clients;
+    std::map<int, std::shared_ptr<Connection<Multiplex>>> _clients;
     std::shared_ptr<Multiplex> _multiplex;
-    std::shared_ptr<ThreadPool> _pool;
 public:
-    SubReactor(const std::shared_ptr<ThreadPool>& pool) : _pool(pool) {
+    SubReactor() {
         static int id = 0;
-        _multiplex = std::make_shared<Multiplex>([this](int x) {
-            this->callback(x);
-
-        }, "sub reactor " + std::to_string(id));
+        _multiplex = std::make_shared<Multiplex>(
+            [this](int x) {this->read_callback(x);},
+            [this](int x) {this->write_callback(x);}, "sub reactor " + std::to_string(id));
         id++;
     }
 
@@ -35,8 +32,20 @@ public:
         _clients.erase(fd);
     }
 
-    void callback(int fd) {
-        int n = _clients[fd]->recv();
+
+    void write_callback(int fd) {
+        if(_clients.find(fd) == _clients.end()) return;
+        int n = _clients[fd]->send_http();
+        //printf("%d send len(%d) message\n", fd, n);
+        if(n < 0) {
+            disconnect(fd);
+            printf("send error: %d\n", fd);
+        }
+    }
+
+    void read_callback(int fd) {
+        if(_clients.find(fd) == _clients.end()) return;
+        int n = _clients[fd]->recv_http();
         //int n = 10;
         printf("%d recv len(%d) message\n", fd, n);
         if(n <= 0) {
@@ -50,7 +59,7 @@ public:
     }
 
     void connect(const std::shared_ptr<Socket>& sock, struct sockaddr_in client) {
-        _clients[sock->fd()] = std::make_shared<TcpConnection<Multiplex>>(sock, client, _multiplex, _pool);
+        _clients[sock->fd()] = std::make_shared<Connection<Multiplex>>(sock, client, _multiplex);
         _clients[sock->fd()]->sock()->sock_nonblock();
         printf("i recv a tcp connection: %d!\n", sock->fd());
     }

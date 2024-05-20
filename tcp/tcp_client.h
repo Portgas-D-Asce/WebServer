@@ -6,7 +6,7 @@
 #define WEBSERVER_TCP_CLIENT_H
 #include <string>
 #include <arpa/inet.h>
-#include "socket.h"
+#include "../common/socket.h"
 
 class TcpClient {
 private:
@@ -73,7 +73,26 @@ public:
             printf("%d\n", cnt);
             ++zzz;
             printf("zzz = %d\n", zzz);
-            sleep(1);
+            //sleep(1);
+        }
+    }
+
+    void run1() const {
+        while(true) {
+            char buff[1024] = {0};
+
+            std::string s("GET / HTTP/1.1\r\n"
+                          "Sec-Fetch-Site: none\r\n"
+                          "Connection: keep-alive\r\n"
+                          "Upgrade-Insecure-Requests: 1\r\n"
+                          "\r\n");
+            int cnt = _sock.sock_send(s.c_str(), s.size());
+            printf("send: %d\n", cnt);
+            cnt = recv(_sock.fd(), buff, sizeof(buff), 0);
+            buff[cnt] = '\0';
+            printf("%s\n", buff);
+            sleep(5);
+
         }
     }
 };

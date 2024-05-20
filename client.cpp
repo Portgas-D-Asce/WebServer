@@ -1,14 +1,14 @@
 #include <iostream>
 #include <vector>
 
-#include "tcp_client.h"
+#include "tcp/tcp_client.h"
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
 
     TcpClient client{};
     client.connect("127.0.0.1", 30000);
-    client.auto_run();
+    client.run1();
 
     //int n = 100;
     //std::vector<TcpClient> clients(n);

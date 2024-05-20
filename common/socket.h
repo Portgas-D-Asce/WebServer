@@ -76,11 +76,18 @@ public:
         fcntl(_fd, F_SETFL, flags | O_NONBLOCK);
     }
 
-    int sock_send(char* buf, long long sz) const {
-        long long temp = sz;
+    int sock_send(const char* buf, int sz) const {
+        int temp = sz;
         while(sz > 0) {
             int cnt = send(_fd, (void *)buf, sz, 0);
-            if(cnt == -1) return -1;
+            if(cnt == -1) {
+                if(errno == 10000000) {
+                    return temp - sz;
+                }
+                perror("send");
+                printf("errno = %d\n", errno);
+                return -1;
+            }
             sz -= cnt;
             buf += cnt;
         }
@@ -96,7 +103,7 @@ public:
                 if(errno == 35) {
                     return temp - sz;
                 }
-                perror("recv: ");
+                perror("recv");
                 printf("errno = %d\n", errno);
                 return -1;
             }

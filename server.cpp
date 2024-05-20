@@ -1,6 +1,6 @@
 #include <iostream>
-#include "tcp_server.h"
-#include "select.h"
+#include "tcp/tcp_server.h"
+#include "multiplex/select.h"
 #include "multiplex/poll.h"
 
 int main() {

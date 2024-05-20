@@ -12,10 +12,10 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include "socket.h"
-#include "tcp_connection.h"
-#include "thread_pool_copy.h"
-#include "main_reactor.h"
+#include "../common/socket.h"
+#include "../common/connection.h"
+#include "../thread/thread_pool_copy.h"
+#include "../reactor/main_reactor.h"
 
 template<typename MainMultiplex, typename SubMultiplex>
 class TcpServer {
