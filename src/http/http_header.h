@@ -84,6 +84,8 @@ std::map<std::string, std::string> Mime = {
     {"gif", "image/gif"},
     {"png", "image/png"},
     {"css", "text/css"},
+    {"pdf", "application/pdf"},
+    {"mp4", "video/mp4"},
     {"au", "audio/basic"},
     {"wav", "audio/wav"},
     {"avi", "video/x-msvideo"},
