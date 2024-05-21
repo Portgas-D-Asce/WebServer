@@ -11,6 +11,10 @@ class SubReactor {
 private:
     std::map<int, std::shared_ptr<Connection<Multiplex>>> _clients;
     std::shared_ptr<Multiplex> _multiplex;
+    // a mutex is necessary:
+    // main reactor thread insert connection into _client
+    // sub reactor thread erase connection from _client
+    std::mutex _mtx;
 public:
     SubReactor() {
         static int id = 0;
@@ -20,8 +24,17 @@ public:
         id++;
     }
 
+    // when new connect come, main reactor will call this
     void connect(const std::shared_ptr<Socket>& sock) {
-        _clients[sock->fd()] = std::make_shared<Connection<Multiplex>>(sock, _multiplex);
+        if(!_multiplex->check_mx(sock->fd())) {
+            printf("too many/large fd: %d, refuse connection\n", sock->fd());
+            return;
+        }
+
+        {
+            std::unique_lock<std::mutex> ul(_mtx);
+            _clients[sock->fd()] = std::make_shared<Connection<Multiplex>>(sock, _multiplex);
+        }
         _clients[sock->fd()]->sock()->sock_nonblock();
 
         struct sockaddr_in client;
@@ -40,7 +53,10 @@ public:
         }
         printf("Goodbye %s: %d\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
 
-        _clients.erase(fd);
+        {
+            std::unique_lock<std::mutex> ul(_mtx);
+            _clients.erase(fd);
+        }
     }
 
     void write_callback(int fd) {
@@ -56,7 +72,7 @@ public:
     void read_callback(int fd) {
         if(_clients.find(fd) == _clients.end()) return;
         int n = _clients[fd]->recv_http();
-        printf("%d recv len(%d) message\n", fd, n);
+        //printf("%d recv len(%d) message\n", fd, n);
         if(n <= 0) {
             disconnect(fd);
             if(n == -1) {

@@ -101,7 +101,7 @@ public:
     }
 
     int callback(const std::string& msg) {
-        printf("callback write msg: %s\n", msg.c_str());
+        // printf("callback write msg: %s\n", msg.c_str());
 
         {
             std::unique_lock<std::mutex> ul(_mtx);

@@ -103,5 +103,4 @@ std::map<std::string, std::string> Mime = {
     {"default", "text/plain; charset=utf-8"}
 };
 
-
 #endif //WEBSERVER_HTTP_HEADER_H

@@ -4,7 +4,7 @@
 #include "multiplex/poll.h"
 
 int main() {
-    TcpServer<Select, Select> server(30000);
+    TcpServer<Select, Poll> server(30000);
     server.start();
     return 0;
 }

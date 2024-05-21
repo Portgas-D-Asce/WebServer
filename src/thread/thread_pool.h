@@ -49,7 +49,7 @@ inline ThreadPool::ThreadPool(size_t cnt) : _stop(false) {
     auto routing = [this]() {
         for (;;) {
             std::function<void()> task;
-            printf("thread id: %d\n", std::this_thread::get_id());
+            // printf("thread id: %d\n", std::this_thread::get_id());
 
             {
                 std::unique_lock<std::mutex> lock(this->_mtx);

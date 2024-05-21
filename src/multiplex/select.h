@@ -13,12 +13,16 @@ private:
     std::function<void(int)> _write_callback;
     std::string _name;
 public:
+    const static int MX = 1024;
+public:
     explicit Select(std::function<void(int)> read_callback,
                     std::function<void(int)> write_callback, std::string s)
         : _mx(0), _read_callback(read_callback), _write_callback(write_callback), _name(s) {
         FD_ZERO(&_fds);
     }
 
+    // main reactor call this add listen_fd when constructing
+    // sub reactor call this add client_fd when add new connection
     void add(int fd) {
         printf("%s pay attention: %d\n", _name.c_str(), fd);
         //加入关注列表
@@ -27,6 +31,7 @@ public:
         if(fd > _mx) _mx = fd;
     }
 
+    // sub reactor call this rm client_fd when rm a connection
     void rm(int fd) {
         printf("%s remove attention: %d\n", _name.c_str(), fd);
         FD_CLR(fd, &_fds);
@@ -34,6 +39,10 @@ public:
         while(_mx > 0 && !FD_ISSET(_mx, &_fds)) {
             _mx--;
         }
+    }
+
+    bool check_mx(int fd) {
+        return fd < MX;
     }
 
     void dispatch() {
@@ -53,7 +62,7 @@ public:
             // interrupted by signal 11: SIGSEGV
             //printf("%s: %d\n", _name.c_str(), cnt);
 
-            //逐个检查文件描述符，找到已经准备好的文件描述符
+            // cnt is event's cnt, not fd's cnt
             for(int i = 0; cnt > 0; ++i) {
                 if(FD_ISSET(i, &rfds)) {
                     cnt--;
@@ -61,7 +70,10 @@ public:
                 }
                 if(FD_ISSET(i, &wfds)) {
                     cnt--;
-                    _write_callback(i);
+                    // i maybe removed in read_callback
+                    if(FD_ISSET(i, &_fds)) {
+                        _write_callback(i);
+                    }
                 }
             }
         }
