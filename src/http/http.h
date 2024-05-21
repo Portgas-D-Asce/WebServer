@@ -28,7 +28,7 @@ public:
         while(idx < n && msg[idx] != Sen[Sep::SPACE][0]) {
             temp.push_back(msg[idx++]);
         }
-        _mp[Pron[Prop::URL]] = temp;
+        _mp[Pron[Prop::URL]] = _decode(temp);
 
         temp.clear(); ++idx;
         while(idx < n && msg[idx] != Sen[Sep::CRLF][0]) {
@@ -54,6 +54,29 @@ public:
         t.append(s);
 
         return t;
+    }
+
+private:
+    static std::string _decode(const std::string& s) {
+        int n = s.size();
+        std::string t;
+        for(int i = 0; i < n; ++i) {
+            if(s[i] == '%') {
+                t.push_back(_code(s[i + 1]) * 16 + _code(s[i + 2]));
+                i += 2;
+            } else {
+                t.push_back(s[i]);
+            }
+        }
+        return t;
+    }
+
+    static int _code(char ch) {
+        if(isdigit(ch)) {
+            return ch - '0';
+        }
+        ch |= 1 << 5;
+        return ch - 'a';
     }
 };
 
