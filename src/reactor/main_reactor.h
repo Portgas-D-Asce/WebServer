@@ -38,16 +38,14 @@ public:
     }
 
     void read_callback(int useless) {
-        struct sockaddr_in client{};
-        auto fd = _sock->sock_accept(client);
+        auto fd = _sock->sock_accept();
         if(!fd) {
             perror("add client socket");
             return;
         }
-        //_multiplex->add(fd->fd());
-        printf("Welcome home %s : %d\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
+
         static int cnt = 0;
-        _sub_reactors[cnt & 1]->connect(fd, client);
+        _sub_reactors[cnt & 1]->connect(fd);
         cnt++;
     }
 

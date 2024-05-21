@@ -20,14 +20,28 @@ public:
         id++;
     }
 
+    void connect(const std::shared_ptr<Socket>& sock) {
+        _clients[sock->fd()] = std::make_shared<Connection<Multiplex>>(sock, _multiplex);
+        _clients[sock->fd()]->sock()->sock_nonblock();
+
+        struct sockaddr_in client;
+        if(_clients[sock->fd()]->sock()->sock_peer_info(client) == -1) {
+            perror("disconnect");
+            return;
+        }
+        printf("Welcome %s: %d\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
+    }
+
     void disconnect(int fd) {
-        printf("Goodbye %s : %d\n",
-               inet_ntoa(_clients[fd]->addr().sin_addr),
-               ntohs(_clients[fd]->addr().sin_port));
+        struct sockaddr_in client;
+        if(_clients[fd]->sock()->sock_peer_info(client) == -1) {
+            perror("disconnect");
+            return;
+        }
+        printf("Goodbye %s: %d\n", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
 
         _clients.erase(fd);
     }
-
 
     void write_callback(int fd) {
         if(_clients.find(fd) == _clients.end()) return;
@@ -51,12 +65,6 @@ public:
             }
         }
         return;
-    }
-
-    void connect(const std::shared_ptr<Socket>& sock, struct sockaddr_in client) {
-        _clients[sock->fd()] = std::make_shared<Connection<Multiplex>>(sock, client, _multiplex);
-        _clients[sock->fd()]->sock()->sock_nonblock();
-        printf("i recv a tcp connection: %d!\n", sock->fd());
     }
 
     void start() {

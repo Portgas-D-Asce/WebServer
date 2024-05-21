@@ -55,7 +55,8 @@ public:
         }
     }
 
-    auto sock_accept(struct sockaddr_in& addr) const {
+    auto sock_accept() const {
+        struct sockaddr_in addr;
         socklen_t len = sizeof(addr);
         int fd = accept(_fd, (struct sockaddr *)&(addr), &len);
         if(fd == - 1) {
@@ -63,6 +64,11 @@ public:
             return std::shared_ptr<Socket>();
         }
         return std::shared_ptr<Socket>(new Socket(fd));
+    }
+
+    auto sock_peer_info(struct sockaddr_in& addr) const {
+        socklen_t len = sizeof(addr);
+        return getpeername(_fd, (struct sockaddr *)&addr, &len);
     }
 
     void sock_nonblock() const {

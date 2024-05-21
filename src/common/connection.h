@@ -11,7 +11,6 @@ class Connection {
 private:
     std::shared_ptr<Socket> _sock;
     std::shared_ptr<Multiplex> _multiplex;
-    struct sockaddr_in _addr;
     std::mutex _mtx;
 
     int _status;
@@ -26,9 +25,8 @@ private:
 public:
     Connection() {};
     Connection(const std::shared_ptr<Socket>& fd,
-        const struct sockaddr_in& addr,
         const std::shared_ptr<Multiplex>& multiplex)
-        : _sock(fd), _addr(addr), _multiplex(multiplex) {
+        : _sock(fd), _multiplex(multiplex) {
         printf("a new tcp connection\n");
         _multiplex->add(_sock->fd());
         _status = 0;
@@ -44,10 +42,6 @@ public:
 
     std::shared_ptr<Socket>& sock() {
         return _sock;
-    }
-
-    struct sockaddr_in& addr() {
-        return _addr;
     }
 
     int recv() {
