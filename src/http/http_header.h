@@ -7,6 +7,32 @@
 #include <string>
 #include <map>
 
+enum Ver {
+    HTTP_1_0,
+    HTTP_1_1,
+    HTTP_2_0,
+    HTTP_3_0,
+    VER_END
+};
+
+const std::string Ven[VER_END] = {
+    "HTTP/1.0",
+    "HTTP/1.1",
+    "HTTP/2.0",
+    "HTTP/3.0"
+};
+
+enum Meth {
+    GET,
+    POST,
+    METH_END
+};
+
+const std::string Metn[METH_END] = {
+    "GET",
+    "POST"
+};
+
 enum Prop {
     METHOD,
     PROTOCOL,
@@ -41,11 +67,17 @@ const std::string Stan[STAT_END] = {
 
 enum Sep {
     CRLF,
+    COLON,
+    SPACE,
+    SLASH,
     SEP_END
 };
 
 const std::string Sen[SEP_END] = {
-    "\r\n"
+    "\r\n",
+    ":",
+    " ",
+    "/"
 };
 
 std::map<std::string, std::string> Mime = {
