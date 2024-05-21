@@ -22,10 +22,10 @@ private:
     int _sz;
     int _cur;
     int _flag;
-    char _in_buf[1024 * 1024];
+    char _in_buf[1024 * 1024 * 800];
 
     int _out_cur;
-    char _out_buf[1024 * 1024];
+    char _out_buf[1024 * 1024 * 800];
 
 public:
     Connection() {};

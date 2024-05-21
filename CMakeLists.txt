@@ -11,11 +11,11 @@ add_executable(server server.cpp
         thread/thread_pool_copy.h
         reactor/main_reactor.h
         reactor/sub_reactor.h
-        http/http_request.h
-        http/http_response.h
+        http/http.h
         handler/file_handler.h
         handler/directory_handler.h
         handler/handler.h
+        http/http_header.h
 )
 
 add_executable(client client.cpp

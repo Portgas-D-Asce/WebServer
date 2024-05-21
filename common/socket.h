@@ -81,7 +81,7 @@ public:
         while(sz > 0) {
             int cnt = send(_fd, (void *)buf, sz, 0);
             if(cnt == -1) {
-                if(errno == 10000000) {
+                if(errno == 35) {
                     return temp - sz;
                 }
                 perror("send");
