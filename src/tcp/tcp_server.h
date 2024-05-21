@@ -1,7 +1,3 @@
-//
-// Created by pk on 2024/5/14.
-//
-
 #ifndef WEBSERVER_TCP_SERVER_H
 #define WEBSERVER_TCP_SERVER_H
 #include <cstdio>
@@ -14,7 +10,7 @@
 #include <fcntl.h>
 #include "../common/socket.h"
 #include "../common/connection.h"
-#include "../thread/thread_pool_copy.h"
+#include "../thread/thread_pool.h"
 #include "../reactor/main_reactor.h"
 
 template<typename MainMultiplex, typename SubMultiplex>
@@ -37,32 +33,6 @@ public:
         _sock->sock_listen(20);
         printf("start main reactor\n");
         _main_reactor->start();
-    }
-
-    //int recv_head(int fd) {
-    //    int type = 0, sz = 0;
-    //    int cnt = _clients[fd]->sock()->sock_recv((char *)&type, sizeof(type));
-    //    if(cnt <= 0) return cnt;
-    //    type = ntohl(type);
-    //    cnt = _clients[fd]->sock()->sock_recv((char *)&sz, sizeof(sz));
-    //    if(cnt <= 0) return cnt;
-    //    sz = ntohll(sz);
-    //    return 12;
-    //}
-
-    //int recv_msg(int fd, long long sz) {
-    //    printf("Recv from [%s, %d]: ",
-    //           inet_ntoa(_clients[fd]->addr().sin_addr),
-    //           ntohs(_clients[fd]->addr().sin_port));
-    //    char buf[1024] = {0};
-    //    int cnt = _clients[fd]->sock()->sock_recv(buf, sz);
-    //    buf[cnt] = '\0';
-    //    printf("%d: %s\n", cnt, buf);
-    //    return cnt;
-    //}
-
-    int listen_fd() const {
-        return _sock->fd();
     }
 };
 #endif //WEBSERVER_TCP_SERVER_H

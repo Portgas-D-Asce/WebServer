@@ -1,7 +1,3 @@
-//
-// Created by pk on 2024/5/19.
-//
-
 #ifndef WEBSERVER_HTTP_H
 #define WEBSERVER_HTTP_H
 #include <iostream>
@@ -14,7 +10,6 @@
 class Http {
 public:
     static std::map<std::string, std::string> parse(const std::string& msg) {
-        //printf("%s\nxxxxx\n\n", s.c_str());
         std::map<std::string, std::string> _mp {
             {Pron[Prop::METHOD], ""},
             {Pron[Prop::URL], ""},

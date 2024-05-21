@@ -1,7 +1,3 @@
-//
-// Created by pk on 2024/5/19.
-//
-
 #ifndef WEBSERVER_MAIN_REACTOR_H
 #define WEBSERVER_MAIN_REACTOR_H
 #include <memory>
@@ -32,7 +28,6 @@ public:
 
         // 我艹 构造函数只会调用一次
         //_sub_reactors = std::vector<std::shared_ptr<SReactor>>(2, std::make_shared<SReactor>(_pool));
-
         _sub_reactors = std::vector<std::shared_ptr<SReactor>>(2);
         _sub_reactors[0] =  std::make_shared<SReactor>();
         _sub_reactors[1] =  std::make_shared<SReactor>();
@@ -69,7 +64,6 @@ public:
             ts[i].join();
         }
     }
-
 };
 
 

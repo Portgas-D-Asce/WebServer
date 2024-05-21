@@ -1,7 +1,3 @@
-//
-// Created by pk on 2024/5/21.
-//
-
 #ifndef WEBSERVER_HTML_H
 #define WEBSERVER_HTML_H
 #include <string>

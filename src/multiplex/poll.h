@@ -1,6 +1,3 @@
-//
-// Created by pk on 2024/5/15.
-//
 #include <sys/poll.h>
 #include <map>
 #include <functional>
@@ -42,7 +39,6 @@ public:
     }
 
     void dispatch() {
-        int server_fd = 0;
         while(true) {
             int cnt = poll(_fds, _mx, -1);
             if(cnt < 0) {
@@ -50,22 +46,11 @@ public:
                 exit(1);
             }
 
-            printf("xxxxx\n");
-
             for(int i = 0; cnt > 0; ++i) {
                 if (!(_fds[i].revents & POLLRDNORM)) continue;
                 cnt--;
                 printf("zzzz: %d\n", i);
                 _callback(_fds[i].fd);
-
-                //if (_fds[i].fd == server_fd) {
-                    //_server.connect();
-                //} else {
-                    //int flag = _server.recv_msg(_fds[i].fd);
-                    //if(flag == 0) {
-                    //    i--;
-                    //}
-                //}
             }
         }
     }

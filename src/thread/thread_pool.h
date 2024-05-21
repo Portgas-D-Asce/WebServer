@@ -1,9 +1,5 @@
-//
-// Created by pk on 2024/5/17.
-//
-
-#ifndef WEBSERVER_THREAD_POOL_COPY_H
-#define WEBSERVER_THREAD_POOL_COPY_H
+#ifndef WEBSERVER_THREAD_POOL_H
+#define WEBSERVER_THREAD_POOL_H
 #include <vector>
 #include <iostream>
 #include <queue>
@@ -122,4 +118,4 @@ inline ThreadPool::~ThreadPool() {
     }
 }
 
-#endif //WEBSERVER_THREAD_POOL_COPY_H
+#endif //WEBSERVER_THREAD_POOL_H

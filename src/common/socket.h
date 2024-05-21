@@ -1,7 +1,3 @@
-//
-// Created by pk on 2024/5/15.
-//
-
 #ifndef WEBSERVER_SOCKET_H
 #define WEBSERVER_SOCKET_H
 #include <string>
@@ -13,8 +9,6 @@
 class Socket {
 private:
     int _fd;
-    // int events;
-    // int revents;
 private:
     explicit Socket(int fd) {
         _fd = fd;

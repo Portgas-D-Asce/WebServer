@@ -1,14 +1,10 @@
-//
-// Created by pk on 2024/5/16.
-//
-
 #ifndef WEBSERVER_CONNECTION_H
 #define WEBSERVER_CONNECTION_H
 #include <arpa/inet.h>
 #include <memory>
 #include "socket.h"
 #include "../handler/handler.h"
-#include "../thread/thread_pool_copy.h"
+#include "../thread/thread_pool.h"
 
 template<typename Multiplex>
 class Connection {
@@ -58,10 +54,6 @@ public:
         int total = 0;
         while(true) {
             if(_status == 0) {
-                //int type = 0;
-                //int cnt = _sock->sock_recv((char *)&type, sizeof(type));
-                //if(cnt <= 0) return cnt;
-                //type = ntohl(type);
                 int need = 4 - _cur;
                 int cnt = _sock->sock_recv(_in_buf + _cur, need);
                 if(cnt == -1) {
@@ -193,10 +185,6 @@ private:
         _cur = 0;
         _status = 0;
         _sz = 0;
-    }
-
-    void _reset_out() {
-
     }
 };
 #endif //WEBSERVER_CONNECTION_H

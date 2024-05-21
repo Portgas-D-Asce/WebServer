@@ -8,7 +8,7 @@ add_executable(server src/server.cpp
         src/multiplex/select.h
         src/common/socket.h
         src/common/connection.h
-        src/thread/thread_pool_copy.h
+        src/thread/thread_pool.h
         src/reactor/main_reactor.h
         src/reactor/sub_reactor.h
         src/http/http.h

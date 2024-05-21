@@ -1,7 +1,3 @@
-//
-// Created by pk on 2024/5/14.
-//
-
 #ifndef WEBSERVER_TCP_CLIENT_H
 #define WEBSERVER_TCP_CLIENT_H
 #include <string>

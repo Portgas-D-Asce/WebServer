@@ -1,7 +1,3 @@
-//
-// Created by pk on 2024/5/19.
-//
-
 #ifndef WEBSERVER_SUB_REACTOR_H
 #define WEBSERVER_SUB_REACTOR_H
 #include <memory>
@@ -46,7 +42,6 @@ public:
     void read_callback(int fd) {
         if(_clients.find(fd) == _clients.end()) return;
         int n = _clients[fd]->recv_http();
-        //int n = 10;
         printf("%d recv len(%d) message\n", fd, n);
         if(n <= 0) {
             disconnect(fd);

@@ -1,7 +1,3 @@
-//
-// Created by pk on 2024/5/15.
-//
-
 #ifndef WEBSERVER_SELECT_H
 #define WEBSERVER_SELECT_H
 #include <sys/select.h>
@@ -67,7 +63,6 @@ public:
                     cnt--;
                     _write_callback(i);
                 }
-
             }
         }
     }

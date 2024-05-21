@@ -1,7 +1,3 @@
-//
-// Created by pk on 2024/5/20.
-//
-
 #ifndef WEBSERVER_HTTP_HEADER_H
 #define WEBSERVER_HTTP_HEADER_H
 #include <string>

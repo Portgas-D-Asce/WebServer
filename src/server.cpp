@@ -4,7 +4,6 @@
 #include "multiplex/poll.h"
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
     TcpServer<Select, Select> server(30000);
     server.start();
     return 0;
