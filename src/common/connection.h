@@ -17,17 +17,15 @@ private:
     int _sz;
     int _cur;
     int _flag;
-    char _in_buf[1024 * 1024 * 800];
+    char _in_buf[1024 * 1024 * 5];
 
     int _out_cur;
-    char _out_buf[1024 * 1024 * 800];
+    char _out_buf[1024 * 1024 * 5];
 
 public:
     Connection() {};
-    Connection(const std::shared_ptr<Socket>& fd,
-        const std::shared_ptr<Multiplex>& multiplex)
+    Connection(const std::shared_ptr<Socket>& fd, const std::shared_ptr<Multiplex>& multiplex)
         : _sock(fd), _multiplex(multiplex) {
-        printf("a new tcp connection\n");
         _multiplex->add(_sock->fd());
         _status = 0;
         _sz = 0;
@@ -38,10 +36,6 @@ public:
 
     ~Connection() {
         _multiplex->rm(_sock->fd());
-    }
-
-    std::shared_ptr<Socket>& sock() {
-        return _sock;
     }
 
     int recv() {
@@ -100,7 +94,7 @@ public:
         return total;
     }
 
-    int callback(const std::string& msg) {
+    void callback(const std::string& msg) {
         // printf("callback write msg: %s\n", msg.c_str());
 
         {
@@ -109,6 +103,7 @@ public:
                 _out_buf[_out_cur++] = ch;
             }
         }
+        //return msg.size();
 
     }
 

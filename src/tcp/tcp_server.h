@@ -21,10 +21,10 @@ private:
     std::shared_ptr<MReactor> _main_reactor;
 
 public:
-    explicit TcpServer(int port)
-        : _sock(std::make_shared<Socket>()),
+    explicit TcpServer(int port) : _sock(std::make_shared<Socket>()),
         _main_reactor(std::make_shared<MReactor>(_sock)) {
-        struct sockaddr_in addr = Socket::sock_address("127.0.0.1", port);
+
+        struct sockaddr_in addr = Socket::sock_address("0.0.0.0", port);
         _sock->sock_bind(addr);
     }
 

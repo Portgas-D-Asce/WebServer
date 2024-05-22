@@ -9,9 +9,11 @@
 class Socket {
 private:
     int _fd;
+    static int _in_cnt;
 private:
     explicit Socket(int fd) {
         _fd = fd;
+        _in_cnt++;
     }
 public:
     Socket() {
@@ -20,8 +22,9 @@ public:
 
     ~Socket() {
         static int cnt = 0;
+        _in_cnt--;
         cnt++;
-        printf("%d, fd: %d will be closed!\n", cnt, _fd);
+        printf("%d, fd: %d will be closed! %d\n", cnt, _fd, _in_cnt);
         close(_fd);
     }
 
@@ -55,13 +58,13 @@ public:
         }
     }
 
-    auto sock_accept() const {
+    std::shared_ptr<Socket> sock_accept() const {
         struct sockaddr_in addr;
         socklen_t len = sizeof(addr);
         int fd = accept(_fd, (struct sockaddr *)&(addr), &len);
-        if(fd == - 1) {
+        if(fd == -1) {
             perror("accept");
-            return std::shared_ptr<Socket>();
+            return nullptr;
         }
         return std::shared_ptr<Socket>(new Socket(fd));
     }
@@ -122,6 +125,8 @@ public:
     }
 
 };
+
+int Socket::_in_cnt = 0;
 
 
 #endif //WEBSERVER_SOCKET_H
