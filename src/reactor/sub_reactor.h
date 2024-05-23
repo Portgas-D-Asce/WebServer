@@ -16,6 +16,8 @@ private:
     // a mutex is necessary:
     // main reactor thread insert connection into _client
     // sub reactor thread erase connection from _client
+    // 按到理来说可以不加锁的啊。。。
+    // shared ptr 明明存在, 为啥 connection 指针就为空了。。。
     std::mutex _mtx;
 public:
     SubReactor() {
@@ -42,7 +44,6 @@ public:
             //_clients[fd] = std::make_shared<Connection<Multiplex>>(sock, _multiplex);
             _clients[fd] = std::make_shared<Connection<Multiplex>>(sock, _multiplex);
         }
-
     }
 
     // sub reactor thread
@@ -55,23 +56,19 @@ public:
 
     // sub reactor thread
     void write_callback(int fd) {
-        // 按到理来说可以不加锁的啊。。。
-        // shared ptr 明明存在, 为啥 connection 指针就为空了。。。
         std::unique_lock<std::mutex> ul(_mtx);
-        //if(_clients.find(fd) == _clients.end()) return;
+	if(!_clients[fd]) return;
         int n = _clients[fd]->send_http();
         //printf("%d send len(%d) message\n", fd, n);
         if(n < 0) {
             disconnect(fd);
             printf("send error: %d\n", fd);
         }
-
     }
 
     // sub reactor thread
     void read_callback(int fd) {
         std::unique_lock<std::mutex> ul(_mtx);
-        //if(_clients.find(fd) == _clients.end()) return;
         int n = _clients[fd]->recv_http();
         //printf("%d recv len(%d) message\n", fd, n);
         if(n <= 0) {

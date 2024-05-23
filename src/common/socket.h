@@ -79,12 +79,13 @@ public:
         fcntl(_fd, F_SETFL, flags | O_NONBLOCK);
     }
 
-    int sock_send(const char* buf, int sz) const {
+    int sock_send(const char* buf, int sz, int& status) const {
         int temp = sz;
         while(sz > 0) {
             int cnt = send(_fd, (void *)buf, sz, 0);
             if(cnt == -1) {
-                if(errno == 35) {
+                if(errno == 11) {
+			status = 1;
                     return temp - sz;
                 }
                 perror("send");
@@ -103,7 +104,7 @@ public:
             int cnt = recv(_fd, buf, sz, 0);
             if(cnt == -1) {
                 // 数据读完了
-                if(errno == 35) {
+                if(errno == 11) {
                     return temp - sz;
                 }
                 perror("recv");

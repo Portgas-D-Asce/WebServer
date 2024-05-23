@@ -102,20 +102,22 @@ public:
             for(char ch : msg) {
                 _out_buf[_out_cur++] = ch;
             }
+	    _multiplex->rm(_sock->fd());
+	    _multiplex->add(_sock->fd());
         }
         //return msg.size();
-
     }
 
     // cnt == 0 说明不了神么，就是写不进去数据
     // cnt == -1 接收异常，表明接收出错，断开连接，重置输出缓冲区已经不重要了。
     // cnt == -1 缓冲区已满导致，返回已发送数据
     int send_http() {
-        int cnt = 0;
+        int cnt = 0, status = 0;
         {
             std::unique_lock<std::mutex> ul(_mtx);
+	    //printf("1111: %d\n", _out_cur);
             if(_out_cur) {
-                cnt = _sock->sock_send(_out_buf, _out_cur);
+                cnt = _sock->sock_send(_out_buf, _out_cur, status);
             }
             if(cnt == -1) return -1;
             if(cnt != 0) {
@@ -125,7 +127,11 @@ public:
                 }
                 _out_cur = idx;
             }
-
+	    //printf("xxx: %d\n", status);
+	    if(_out_cur != 0 && !status) {
+	        _multiplex->rm(_sock->fd());
+	        _multiplex->add(_sock->fd());
+	    }
         }
         return cnt;
     }

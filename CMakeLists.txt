@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.20)
 project(WebServer)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -18,8 +18,5 @@ add_executable(server src/server.cpp
         src/http/http_header.h
         src/html/html.h
 )
+target_link_libraries(server -lpthread)
 
-add_executable(client src/client.cpp
-        src/tcp/tcp_client.h
-        src/common/socket.h
-)
