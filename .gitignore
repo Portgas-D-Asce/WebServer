@@ -7,4 +7,5 @@ bug.md
 todo.md
 cmake-build-debug
 root
-
+.idea
+.DS_Store
