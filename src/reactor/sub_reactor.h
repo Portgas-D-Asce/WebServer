@@ -38,7 +38,7 @@ public:
 
         printf("Welcome\n");
         {
-            std::unique_lock<std::mutex> ul(_mtx);
+            std::lock_guard<std::mutex> ul(_mtx);
             _clients[fd] = std::make_shared<Connection<Multiplex>>(sock, _multiplex);
             _multiplex->add(fd);
         }
@@ -47,7 +47,7 @@ public:
     // sub reactor thread
     void disconnect(int fd) {
         //_clients.erase(fd);
-        std::unique_lock<std::mutex> ul(_mtx);
+        std::lock_guard<std::mutex> ul(_mtx);
         _clients[fd] = nullptr;
         _multiplex->rm(fd);
         printf("Goodbye\n");

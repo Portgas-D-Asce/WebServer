@@ -34,7 +34,7 @@ public:
     //}
 
     void callback(const std::string& msg) {
-        std::unique_lock<std::mutex> ul(_mtx);
+        std::lock_guard<std::mutex> ul(_mtx);
         for(char ch : msg) {
             _out_buf[_out_cur++] = ch;
         }
@@ -49,7 +49,7 @@ public:
     int send_http() {
         int cnt = 0, status = 0;
         {
-            std::unique_lock<std::mutex> ul(_mtx);
+            std::lock_guard<std::mutex> ul(_mtx);
             if(_out_cur) {
                 cnt = _sock->sock_send(_out_buf, _out_cur, status);
             }
