@@ -84,8 +84,12 @@ public:
         while(sz > 0) {
             int cnt = send(_fd, (void *)buf, sz, 0);
             if(cnt == -1) {
-                if(errno == 11) {
-			status = 1;
+                // 被打断了
+                if(errno == EINTR) {
+                    continue;
+                }
+                if(errno == EAGAIN || errno == EWOULDBLOCK) {
+			        status = 1;
                     return temp - sz;
                 }
                 perror("send");
@@ -103,8 +107,12 @@ public:
         while(sz > 0) {
             int cnt = recv(_fd, buf, sz, 0);
             if(cnt == -1) {
+                // 被打断了
+                if(errno == EINTR) {
+                    continue;
+                }
                 // 数据读完了
-                if(errno == 11) {
+                if(errno == EAGAIN || errno == EWOULDBLOCK) {
                     return temp - sz;
                 }
                 perror("recv");

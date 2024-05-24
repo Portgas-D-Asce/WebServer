@@ -13,10 +13,7 @@ private:
     std::shared_ptr<Multiplex> _multiplex;
     std::mutex _mtx;
 
-    int _status;
-    int _sz;
-    int _cur;
-    int _flag;
+    int _in_cur;
     char _in_buf[1024 * 1024 * 5];
 
     int _out_cur;
@@ -27,9 +24,7 @@ public:
     Connection(const std::shared_ptr<Socket>& fd, const std::shared_ptr<Multiplex>& multiplex)
         : _sock(fd), _multiplex(multiplex) {
         _multiplex->add(_sock->fd());
-        _status = 0;
-        _sz = 0;
-        _cur = 0;
+        _in_cur = 0;
 
         _out_cur = 0;
     }
@@ -38,84 +33,22 @@ public:
         _multiplex->rm(_sock->fd());
     }
 
-    int recv() {
-        int total = 0;
-        while(true) {
-            if(_status == 0) {
-                int need = 4 - _cur;
-                int cnt = _sock->sock_recv(_in_buf + _cur, need);
-                if(cnt == -1) {
-                    _reset();
-                    return -1;
-                }
-                if(cnt == 0) {
-                    //_reset();
-                    return total;
-                }
-                total += cnt;
-                if(cnt == need) {
-                    _status = 1;
-                    _cur += cnt;
-                    _sz = ntohl(*((int *)_in_buf));
-                } else {
-                    _cur += cnt;
-                    break;
-                }
-            } else {
-                int need = _sz + 4 - _cur;
-                int cnt = _sock->sock_recv(_in_buf + _cur, need);
-                if(cnt == -1) {
-                    _reset();
-                    return -1;
-                }
-                if(cnt == 0) {
-                    //_reset();
-                    return total;
-                }
-                total += cnt;
-                if(need == cnt) {
-                    // 处理消息
-                    int type = ntohl(*((int *)(_in_buf + 4)));
-                    //printf("message type: %d\n", type);
-                    _in_buf[_sz + 4] = '\0';
-                    //printf("message: %s\n", _in_buf + 8);
-                    std::string s(_in_buf + 8);
-                    //_pool->enqueue(Handler(), type, s);
-
-                    // 准备下一次接收
-                    _reset();
-                } else {
-                    _cur += cnt;
-                    break;
-                }
-
-            }
-        }
-        return total;
-    }
-
     void callback(const std::string& msg) {
-        // printf("callback write msg: %s\n", msg.c_str());
-
-        {
-            std::unique_lock<std::mutex> ul(_mtx);
-            for(char ch : msg) {
-                _out_buf[_out_cur++] = ch;
-            }
+        std::unique_lock<std::mutex> ul(_mtx);
+        for(char ch : msg) {
+            _out_buf[_out_cur++] = ch;
+        }
+        // 新数据到来，重新激活写事件
 	    _multiplex->rm(_sock->fd());
 	    _multiplex->add(_sock->fd());
-        }
-        //return msg.size();
     }
 
-    // cnt == 0 说明不了神么，就是写不进去数据
+    // cnt == 0 说明不了神么: 可能因为压根就没有数据要写，也可能因为缓冲区一直阻塞写不进去。
     // cnt == -1 接收异常，表明接收出错，断开连接，重置输出缓冲区已经不重要了。
-    // cnt == -1 缓冲区已满导致，返回已发送数据
     int send_http() {
         int cnt = 0, status = 0;
         {
             std::unique_lock<std::mutex> ul(_mtx);
-	    //printf("1111: %d\n", _out_cur);
             if(_out_cur) {
                 cnt = _sock->sock_send(_out_buf, _out_cur, status);
             }
@@ -127,37 +60,36 @@ public:
                 }
                 _out_cur = idx;
             }
-	    //printf("xxx: %d\n", status);
-	    if(_out_cur != 0 && !status) {
-	        _multiplex->rm(_sock->fd());
-	        _multiplex->add(_sock->fd());
-	    }
+	        // 如果还有数据要写，且以 “缓冲区未被写满” 的状态返回
+            // 手动上下树，防止边缘触发 “永久丢失写事件”
+            // 没有数据要写了，永久丢失是一件好事情，有新数据到来时会重新激活
+	        if(_out_cur != 0 && !status) {
+	            _multiplex->rm(_sock->fd());
+	            _multiplex->add(_sock->fd());
+	        }
         }
         return cnt;
     }
 
     // total == 0 表明是断开连接请求
-    // cnt == -1 且确定是接收异常，则返回 -1，表示接收出错，断开连接
-    // cnt == -1 但由于没有数据，则返回总共接收数据。
+    // cnt == -1 表示接收出错，断开连接
     int recv_http() {
         int total = 0;
         while(true) {
-            int need = sizeof(_in_buf) - _cur;
-            int cnt = _sock->sock_recv(_in_buf + _cur, need);
+            // 一次可能接收不完，先接收一部分，处理了，再接收剩下部分
+            int need = sizeof(_in_buf) - _in_cur;
+            int cnt = _sock->sock_recv(_in_buf + _in_cur, need);
             if(cnt == -1) {
-                _reset();
-                return -1;
+                return cnt;
             }
             if(cnt == 0) {
-                //_reset();
                 return total;
             }
-            int pre = std::max(_cur, 3);
-            total += cnt;
-            _cur += cnt;
-            for(int i = pre, pre = 0; i < _cur; ++i) {
-                if(_in_buf[i] == '\n' && _in_buf[i - 1] == '\r'
-                    && _in_buf[i - 2] == '\n' && _in_buf[i - 3] == '\r') {
+
+            int temp = std::max(_in_cur, 3), pre = 0;
+            total += cnt; _in_cur += cnt;
+            for(int i = temp; i < _in_cur; ++i) {
+                if(_in_buf[i] == '\n' && _in_buf[i - 1] == '\r' && _in_buf[i - 2] == '\n' && _in_buf[i - 3] == '\r') {
                     std::string msg(_in_buf + pre, i + 1 - pre);
                     ThreadPool& pool = ThreadPool::get_instance();
                     pool.enqueue(Handler(), msg, [this](const std::string& s) {
@@ -166,20 +98,16 @@ public:
                     pre = i + 1;
                 }
             }
-            if(pre == 0) continue;
+            // 距离上次没有发生移动，消息已经接收完了
+            if(pre == 0) {
+                return total;
+            }
             int idx = 0;
-            for(int i = pre; i < _cur; ++i, ++idx) {
+            for(int i = pre; i < _in_cur; ++i, ++idx) {
                 _in_buf[idx++] = _in_buf[i];
             }
-            _cur = idx;
+            _in_cur = idx;
         }
-    }
-
-private:
-    void _reset() {
-        _cur = 0;
-        _status = 0;
-        _sz = 0;
     }
 };
 #endif //WEBSERVER_CONNECTION_H

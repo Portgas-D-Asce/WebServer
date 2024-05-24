@@ -10,14 +10,11 @@
 template<typename Multiplex>
 class SubReactor {
 private:
-    //std::map<int, std::shared_ptr<Connection<Multiplex>>> _clients;
-    std::vector<std::shared_ptr<Connection<Multiplex>>> _clients{Multiplex::MX};
+    std::map<int, std::shared_ptr<Connection<Multiplex>>> _clients;
     std::shared_ptr<Multiplex> _multiplex;
     // a mutex is necessary:
     // main reactor thread insert connection into _client
     // sub reactor thread erase connection from _client
-    // 按到理来说可以不加锁的啊。。。
-    // shared ptr 明明存在, 为啥 connection 指针就为空了。。。
     std::mutex _mtx;
 public:
     SubReactor() {
@@ -35,28 +32,25 @@ public:
         // 最大文件描述符限制
         if(fd >= Multiplex::MX) {
             //printf("cur connection num: %d\n", _clients.size());
-            printf("too many/large fd: %d, refuse connection\n", sock->fd());
+            printf("too many fd: %d, refuse connection\n", sock->fd());
             return;
         }
 
         {
             std::unique_lock<std::mutex> ul(_mtx);
-            //_clients[fd] = std::make_shared<Connection<Multiplex>>(sock, _multiplex);
             _clients[fd] = std::make_shared<Connection<Multiplex>>(sock, _multiplex);
         }
     }
 
     // sub reactor thread
     void disconnect(int fd) {
-        //_clients.erase(fd);
-        //std::shared_ptr<Connection<Multiplex>> temp(nullptr);
-        _clients[fd] = nullptr;
+        _clients.erase(fd);
         printf("Goodbye\n");
     }
 
     // sub reactor thread
     void write_callback(int fd) {
-        std::unique_lock<std::mutex> ul(_mtx);
+    std::unique_lock<std::mutex> ul(_mtx);
 	if(!_clients[fd]) return;
         int n = _clients[fd]->send_http();
         //printf("%d send len(%d) message\n", fd, n);
