@@ -1,7 +1,7 @@
 #ifndef WEBSERVER_SUB_REACTOR_H
 #define WEBSERVER_SUB_REACTOR_H
 #include <memory>
-#include <map>
+//#include <map>
 #include <vector>
 #include <functional>
 #include "../common/socket.h"
@@ -10,7 +10,8 @@
 template<typename Multiplex>
 class SubReactor {
 private:
-    std::map<int, std::shared_ptr<Connection<Multiplex>>> _clients;
+    //std::map<int, std::shared_ptr<Connection<Multiplex>>> _clients;
+    std::shared_ptr<Connection<Multiplex>> _clients[Multiplex::MX];
     std::shared_ptr<Multiplex> _multiplex;
     // a mutex is necessary:
     // main reactor thread insert connection into _client
@@ -31,28 +32,32 @@ public:
         int fd = sock->fd();
         // 最大文件描述符限制
         if(fd >= Multiplex::MX) {
-            //printf("cur connection num: %d\n", _clients.size());
             printf("too many fd: %d, refuse connection\n", sock->fd());
             return;
         }
 
+        printf("Welcome\n");
         {
             std::unique_lock<std::mutex> ul(_mtx);
             _clients[fd] = std::make_shared<Connection<Multiplex>>(sock, _multiplex);
+            _multiplex->add(fd);
         }
     }
 
     // sub reactor thread
     void disconnect(int fd) {
-        _clients.erase(fd);
+        //_clients.erase(fd);
+        std::unique_lock<std::mutex> ul(_mtx);
+        _clients[fd] = nullptr;
+        _multiplex->rm(fd);
         printf("Goodbye\n");
     }
 
     // sub reactor thread
     void write_callback(int fd) {
-    std::unique_lock<std::mutex> ul(_mtx);
-	if(!_clients[fd]) return;
+        //std::unique_lock<std::mutex> ul(_mtx);
         int n = _clients[fd]->send_http();
+        if(!_clients[fd]) return;
         //printf("%d send len(%d) message\n", fd, n);
         if(n < 0) {
             disconnect(fd);
@@ -62,7 +67,7 @@ public:
 
     // sub reactor thread
     void read_callback(int fd) {
-        std::unique_lock<std::mutex> ul(_mtx);
+        //std::unique_lock<std::mutex> ul(_mtx);
         int n = _clients[fd]->recv_http();
         //printf("%d recv len(%d) message\n", fd, n);
         if(n <= 0) {

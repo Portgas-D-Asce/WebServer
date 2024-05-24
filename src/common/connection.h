@@ -23,15 +23,15 @@ public:
     Connection() {};
     Connection(const std::shared_ptr<Socket>& fd, const std::shared_ptr<Multiplex>& multiplex)
         : _sock(fd), _multiplex(multiplex) {
-        _multiplex->add(_sock->fd());
+        //_multiplex->add(_sock->fd());
         _in_cur = 0;
 
         _out_cur = 0;
     }
 
-    ~Connection() {
-        _multiplex->rm(_sock->fd());
-    }
+    //~Connection() {
+    //    _multiplex->rm(_sock->fd());
+    //}
 
     void callback(const std::string& msg) {
         std::unique_lock<std::mutex> ul(_mtx);

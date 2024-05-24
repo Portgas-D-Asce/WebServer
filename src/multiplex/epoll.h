@@ -1,5 +1,3 @@
-//#include <sys/epoll.h>
-
 #ifndef WEBSERVER_EPOLL_H
 #define WEBSERVER_EPOLL_H
 #include <sys/epoll.h>
@@ -14,11 +12,8 @@ private:
     std::function<void(int)> _write_callback;
     std::string _name;
 public:
-    explicit EPoll(std::function<void(int)> read_callback,
-                  std::function<void(int)> write_callback,
-                  std::string name)
-        : _read_callback(read_callback),
-        _write_callback(write_callback), _name(name) {
+    explicit EPoll(std::function<void(int)> read_callback, std::function<void(int)> write_callback, std::string name)
+        : _read_callback(read_callback), _write_callback(write_callback), _name(name) {
 		_fd = epoll_create1(0);
 		if(_fd == -1) {
 			perror("epoll_creat1");
@@ -43,10 +38,6 @@ public:
 		    exit(1);
 	    }
         printf("remove attention: %d\n", fd);
-    }
-
-    bool check_mx(int fd) {
-	    return true;
     }
 
     void dispatch() {

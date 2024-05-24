@@ -56,6 +56,7 @@ public:
                 if(FD_ISSET(i, &wfds)) {
                     cnt--;
                     // i maybe removed in read_callback
+                    // callback won't check this, you must do it here
                     if(FD_ISSET(i, &_fds)) {
                         _write_callback(i);
                     }
