@@ -33,10 +33,8 @@ public:
     }
 
     void rm(int fd) {
-	    if(epoll_ctl(_fd, EPOLL_CTL_DEL, fd, NULL) == -1) {
-		    perror("epoll_ctl_delete");
-		    exit(1);
-	    }
+	// do nothing, becasue it has been down when we close fd
+	// you can find it in man epoll Q6
         printf("remove attention: %d\n", fd);
     }
 

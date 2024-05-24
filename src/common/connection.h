@@ -39,6 +39,7 @@ public:
             _out_buf[_out_cur++] = ch;
         }
         // 新数据到来，重新激活写事件
+	printf("new msg come: %d\n", _sock->fd());
 	    _multiplex->rm(_sock->fd());
 	    _multiplex->add(_sock->fd());
     }
@@ -64,6 +65,7 @@ public:
             // 手动上下树，防止边缘触发 “永久丢失写事件”
             // 没有数据要写了，永久丢失是一件好事情，有新数据到来时会重新激活
 	        if(_out_cur != 0 && !status) {
+	printf("xxx come: %d\n", _sock->fd());
 	            _multiplex->rm(_sock->fd());
 	            _multiplex->add(_sock->fd());
 	        }

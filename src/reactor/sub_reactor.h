@@ -56,8 +56,8 @@ public:
     // sub reactor thread
     void write_callback(int fd) {
         //std::unique_lock<std::mutex> ul(_mtx);
-        int n = _clients[fd]->send_http();
         if(!_clients[fd]) return;
+        int n = _clients[fd]->send_http();
         //printf("%d send len(%d) message\n", fd, n);
         if(n < 0) {
             disconnect(fd);
