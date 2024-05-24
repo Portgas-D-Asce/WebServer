@@ -58,7 +58,7 @@ public:
 
         // to avoid using mutex in write_callback and read_callback,
         // so move it here from connection's constructor
-        _multiplex->rm(fd);
+        // _multiplex->rm(fd);
 
         // release tcp connection
         // after close fd and before _clients[fd] = nullptr

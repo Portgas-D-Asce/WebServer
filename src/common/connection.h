@@ -41,6 +41,7 @@ public:
         // 新数据到来，重新激活写事件
 	printf("new msg come: %d\n", _sock->fd());
 	    _multiplex->rm(_sock->fd());
+		    printf("up tree: %d\n", _sock->fd());
 	    _multiplex->add(_sock->fd());
     }
 
@@ -67,6 +68,7 @@ public:
 	        if(_out_cur != 0 && !status) {
 	printf("xxx come: %d\n", _sock->fd());
 	            _multiplex->rm(_sock->fd());
+		    printf("up tree xxx: %d\n", _sock->fd());
 	            _multiplex->add(_sock->fd());
 	        }
         }
