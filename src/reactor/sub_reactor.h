@@ -38,7 +38,7 @@ public:
 
         printf("Welcome\n");
         {
-            //std::lock_guard<std::mutex> ul(_mtx);
+            std::lock_guard<std::mutex> ul(_mtx);
             // not only conflict with disconnect but also with write_callback and read_callback
             // when connection is constructed, but _clients[fd] is nullptr
             // fd has been "up tree", so select/poll/epoll can receive even
@@ -54,7 +54,7 @@ public:
     // sub reactor thread
     void disconnect(int fd) {
         //_clients.erase(fd);
-        //std::lock_guard<std::mutex> ul(_mtx);
+        std::lock_guard<std::mutex> ul(_mtx);
 
         // to avoid using mutex in write_callback and read_callback,
         // so move it here from connection's constructor
@@ -64,8 +64,6 @@ public:
         // after close fd and before _clients[fd] = nullptr
         // fd maybe get by connection immediately: connection's fd == disconnection's fd
         _clients[fd] = nullptr;
-
-        close(fd);
         printf("Goodbye\n");
     }
 

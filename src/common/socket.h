@@ -25,7 +25,7 @@ public:
         _in_cnt--;
         cnt++;
         printf("%d, fd: %d will be closed! %d\n", cnt, _fd, _in_cnt);
-        // close(_fd);
+        close(_fd);
     }
 
     Socket(const Socket&) = delete;
