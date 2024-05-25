@@ -34,6 +34,9 @@ public:
     //}
 
     void callback(const std::string& msg) {
+        // what happens on earth???
+        // if connection has been destroyed, thread will not execute continue
+        // another bug you should pay attention to
         std::lock_guard<std::mutex> ul(_mtx);
         for(char ch : msg) {
             _out_buf[_out_cur++] = ch;

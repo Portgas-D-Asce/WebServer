@@ -30,7 +30,7 @@ public:
 private:
     explicit ThreadPool(size_t cnt);
 private:
-    // need to keep track of threads so we can join them
+    // need to keep track of threads, so we can join them
     std::vector<std::thread> _workers;
     // the task queue
     std::queue<std::function<void()>> _tasks;
