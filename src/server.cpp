@@ -1,4 +1,3 @@
-#include <iostream>
 #include "tcp/tcp_server.h"
 #include "multiplex/select.h"
 #include "multiplex/poll.h"

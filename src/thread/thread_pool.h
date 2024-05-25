@@ -23,7 +23,7 @@ public:
         static std::once_flag flag;
         call_once(flag, [&](){
             _instance = std::unique_ptr<ThreadPool>(
-                new ThreadPool(4));
+                new ThreadPool(2));
         });
         return *_instance;
     }

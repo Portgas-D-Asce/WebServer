@@ -36,9 +36,10 @@ public:
             return;
         }
 
-        printf("Welcome\n");
         {
-            //std::lock_guard<std::mutex> ul(_mtx);
+
+            //printf("Welcome\n");
+            std::lock_guard<std::mutex> lg(_mtx);
             // not only conflict with disconnect but also with write_callback and read_callback
             // when connection is constructed, but _clients[fd] is nullptr
             // fd has been "up tree", so select/poll/epoll can receive even
@@ -54,24 +55,22 @@ public:
     // sub reactor thread
     void disconnect(int fd) {
         //_clients.erase(fd);
-        //std::lock_guard<std::mutex> ul(_mtx);
+        std::lock_guard<std::mutex> lg(_mtx);
 
         // to avoid using mutex in write_callback and read_callback,
         // so move it here from connection's constructor
-        // _multiplex->rm(fd);
+        _multiplex->rm(fd);
 
         // release tcp connection
         // after close fd and before _clients[fd] = nullptr
         // fd maybe get by connection immediately: connection's fd == disconnection's fd
         _clients[fd] = nullptr;
 
-        close(fd);
-        printf("Goodbye\n");
+        //printf("Goodbye\n");
     }
 
     // sub reactor thread
     void write_callback(int fd) {
-        //std::unique_lock<std::mutex> ul(_mtx);
         if(!_clients[fd]) return;
         int n = _clients[fd]->send_http();
         //printf("%d send len(%d) message\n", fd, n);
@@ -83,13 +82,11 @@ public:
 
     // sub reactor thread
     void read_callback(int fd) {
-        //std::unique_lock<std::mutex> ul(_mtx);
         int n = _clients[fd]->recv_http();
         //printf("%d recv len(%d) message\n", fd, n);
         if(n <= 0) {
             disconnect(fd);
             if(n == -1) {
-                printf("recv error: %d\n", fd);
                 return;
             }
         }

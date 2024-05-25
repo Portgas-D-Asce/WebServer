@@ -26,6 +26,11 @@ public:
         FD_SET(fd, &_fds);
     }
 
+    void mod(int fd) {
+	// do nothing
+        //printf("%s mod attention: %d\n", _name.c_str(), fd);
+    }
+
     // sub reactor call this rm client_fd when rm a connection
     void rm(int fd) {
         printf("%s remove attention: %d\n", _name.c_str(), fd);
@@ -35,20 +40,17 @@ public:
     void dispatch() {
         while(true) {
             fd_set rfds = _fds, wfds = _fds;
-            timeval tv{0, 0};
             // 设置为阻塞模式会导致子 select 无法检测到就绪 fd
             //int cnt = select(_mx + 1, &fds, NULL, NULL, NULL);
+            timeval tv{0, 0};
             int cnt = select(MX, &rfds, &wfds, NULL, &tv);
             if(cnt < 0) {
                 perror("select error");
                 exit(1);
             }
-            // 打印语句注释了，会概率性失败？？？？？？？？
-            // interrupted by signal 11: SIGSEGV
-            // printf("%s: %d\n", _name.c_str(), cnt);
 
             // cnt is event's cnt, not fd's cnt
-            for(int i = 0; cnt > 0 && i < MX; ++i) {
+            for(int i = 0; cnt > 0; ++i) {
                 if(FD_ISSET(i, &rfds)) {
                     cnt--;
                     _read_callback(i);
@@ -65,3 +67,4 @@ public:
 };
 
 #endif //WEBSERVER_SELECT_H
+
