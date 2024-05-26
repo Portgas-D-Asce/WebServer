@@ -6,6 +6,8 @@
 #include <functional>
 #include "../common/socket.h"
 #include "../common/connection.h"
+#include "../handler/handler.h"
+#include "../thread/thread_pool.h"
 
 template<typename Multiplex>
 class SubReactor {
@@ -16,7 +18,8 @@ private:
     // a mutex is necessary:
     // main reactor thread insert connection into _client
     // sub reactor thread erase connection from _client
-    std::mutex _mtx;
+    mutable std::mutex _mtx;
+    mutable std::mutex _event_mtx;
 public:
     SubReactor() {
         static int id = 0;
@@ -25,6 +28,16 @@ public:
         std::string name = "sub reactor " + std::to_string(id);
         _multiplex = std::make_shared<Multiplex>(read_callback, write_callback, name);
         id++;
+    }
+
+    void event_callback(const std::string& msg, int fd, long long id) const {
+        std::lock_guard<std::mutex> lg(_event_mtx);
+        // connection not exist
+        if(!_clients[fd] || _clients[fd]->id() != id) {
+            return;
+        }
+
+        _clients[fd]->callback(msg);
     }
 
     // main reactor thread
@@ -48,6 +61,7 @@ public:
 
             // to avoid using mutex in write_callback and read_callback,
             // so move it here from connection's constructor
+            // can it move out of the lock？？？
             _multiplex->add(fd);
         }
     }
@@ -59,8 +73,10 @@ public:
 
         // to avoid using mutex in write_callback and read_callback,
         // so move it here from connection's constructor
+        // can it move out of the lock？？？
         _multiplex->rm(fd);
 
+        std::lock_guard<std::mutex> lg_event(_event_mtx);
         // release tcp connection
         // after close fd and before _clients[fd] = nullptr
         // fd maybe get by connection immediately: connection's fd == disconnection's fd
@@ -82,13 +98,22 @@ public:
 
     // sub reactor thread
     void read_callback(int fd) {
-        int n = _clients[fd]->recv_http();
+        std::vector<std::string> msgs;
+        int n = _clients[fd]->recv_http(msgs);
         //printf("%d recv len(%d) message\n", fd, n);
         if(n <= 0) {
             disconnect(fd);
             if(n == -1) {
                 return;
             }
+        }
+
+        ThreadPool& pool = ThreadPool::get_instance();
+        for(auto &msg : msgs) {
+            long long id = _clients[fd]->id();
+            pool.enqueue(Handler(), std::move(msg), [this, fd, id](const std::string& resp) {
+                this->event_callback(resp, fd, id);
+            });
         }
     }
 

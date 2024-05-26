@@ -2,16 +2,18 @@
 #define WEBSERVER_CONNECTION_H
 #include <arpa/inet.h>
 #include <memory>
+#include <vector>
 #include "socket.h"
-#include "../handler/handler.h"
-#include "../thread/thread_pool.h"
 
 template<typename Multiplex>
 class Connection {
 private:
     std::shared_ptr<Socket> _sock;
     std::shared_ptr<Multiplex> _multiplex;
-    std::mutex _mtx;
+    mutable std::mutex _mtx;
+    // sock fd can identify a connection unique
+    // use id identify a connection unique
+    long long _id;
 
     int _in_cur;
     char _in_buf[1024 * 1024 * 5];
@@ -23,9 +25,15 @@ public:
     Connection() {};
     Connection(const std::shared_ptr<Socket>& fd, const std::shared_ptr<Multiplex>& multiplex)
         : _sock(fd), _multiplex(multiplex) {
+        static long long idx = 0;
+        _id = idx++;
         //_multiplex->add(_sock->fd());
         _in_cur = 0;
         _out_cur = 0;
+    }
+
+    long long id() const {
+        return _id;
     }
 
     //~Connection() {
@@ -33,9 +41,6 @@ public:
     //}
 
     void callback(const std::string& msg) {
-        // what happens on earth???
-        // if connection has been destroyed, thread will not execute continue
-        // another bug you should pay attention to
         std::lock_guard<std::mutex> lg(_mtx);
         for(char ch : msg) {
             _out_buf[_out_cur++] = ch;
@@ -73,7 +78,7 @@ public:
 
     // total == 0 表明是断开连接请求
     // cnt == -1 表示接收出错，断开连接
-    int recv_http() {
+    int recv_http(std::vector<std::string>& msgs) {
         int total = 0, status = 0;
         while(true) {
             // 一次可能接收不完，先接收一部分，处理了，再接收剩下部分
@@ -90,11 +95,7 @@ public:
             total += cnt; _in_cur += cnt;
             for(int i = temp; i < _in_cur; ++i) {
                 if(_in_buf[i] == '\n' && _in_buf[i - 1] == '\r' && _in_buf[i - 2] == '\n' && _in_buf[i - 3] == '\r') {
-                    std::string msg(_in_buf + pre, i + 1 - pre);
-                    ThreadPool& pool = ThreadPool::get_instance();
-                    pool.enqueue(Handler(), msg, [this](const std::string& s) {
-                        this->callback(s);
-                    });
+                    msgs.emplace_back(_in_buf + pre, i + 1 - pre);
                     pre = i + 1;
                 }
             }
