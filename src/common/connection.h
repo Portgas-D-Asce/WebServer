@@ -13,7 +13,7 @@ private:
     std::shared_ptr<Socket> _sock;
     std::shared_ptr<Multiplex> _multiplex;
     mutable std::mutex _mtx;
-    // sock fd can identify a connection unique
+    // sock fd can't identify a connection unique
     // use id identify a connection unique
     long long _id;
 
