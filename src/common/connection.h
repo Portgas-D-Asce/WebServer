@@ -3,6 +3,8 @@
 #include <arpa/inet.h>
 #include <memory>
 #include <vector>
+#include <mutex>
+#include "../config/config.h"
 #include "socket.h"
 
 template<typename Multiplex>
@@ -16,10 +18,10 @@ private:
     long long _id;
 
     int _in_cur;
-    char _in_buf[1024 * 1024 * 5];
+    char _in_buf[Config::BUFFER_SIZE];
 
     int _out_cur;
-    char _out_buf[1024 * 1024 * 5];
+    char _out_buf[Config::BUFFER_SIZE];
 
 public:
     Connection() {};

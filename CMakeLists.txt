@@ -17,6 +17,7 @@ add_executable(server src/server.cpp
         src/handler/handler.h
         src/http/http_header.h
         src/html/html.h
+        src/config/config.h
 )
 target_link_libraries(server -lpthread)
 

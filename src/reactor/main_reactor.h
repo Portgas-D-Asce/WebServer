@@ -4,6 +4,7 @@
 #include <vector>
 #include <functional>
 #include "../common/socket.h"
+#include "../config/config.h"
 #include "sub_reactor.h"
 
 template<typename MainMultiplex, typename SubMultiplex>
@@ -23,10 +24,10 @@ public:
 
         // 我艹 构造函数只会调用一次
         //_sub_reactors = std::vector<std::shared_ptr<SReactor>>(2, std::make_shared<SReactor>(_pool));
-        int n = 1;
-        _sub_reactors = std::vector<std::shared_ptr<SReactor>>(n, std::make_shared<SReactor>());
+        int n = Config::SUB_REACTOR_SIZE;
+        _sub_reactors = std::vector<std::shared_ptr<SReactor>>(n);
         for(int i = 0; i < n; ++i) {
-            _sub_reactors[i] =  std::make_shared<SReactor>();
+            _sub_reactors[i] = std::make_shared<SReactor>();
         }
     }
 
@@ -46,8 +47,9 @@ public:
 
         // 将 client fd 加入到 sub reactor
         static int cnt = 0;
-        _sub_reactors[cnt & 1]->connect(fd);
-        //cnt++;
+        int n = _sub_reactors.size();
+        _sub_reactors[cnt % n]->connect(fd);
+        cnt++;
     }
 
     void start() {

@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <memory>
 #include <arpa/inet.h>
+#include "../config/config.h"
 #include "../common/socket.h"
 #include "../reactor/main_reactor.h"
 
@@ -23,7 +24,7 @@ public:
 
     void start() {
         printf("start listen\n");
-        _sock->sock_listen(20000);
+        _sock->sock_listen(Config::LISTEN_QUEUE_SIZE);
         printf("start main reactor\n");
         _main_reactor->start();
     }
