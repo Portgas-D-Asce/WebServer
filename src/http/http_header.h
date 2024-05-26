@@ -37,6 +37,7 @@ enum Prop {
     SERVER,
     CONTENT_TYPE,
     CONTENT_LENGTH,
+    CONNECTION,
     PROP_END
 };
 
@@ -47,7 +48,8 @@ const std::string Pron[PROP_END] = {
     "Code",
     "Server",
     "Content-Type",
-    "Content-Length"
+    "Content-Length",
+    "Connection"
 };
 
 enum Stat {

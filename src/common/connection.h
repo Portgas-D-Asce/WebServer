@@ -25,7 +25,6 @@ public:
         : _sock(fd), _multiplex(multiplex) {
         //_multiplex->add(_sock->fd());
         _in_cur = 0;
-
         _out_cur = 0;
     }
 
@@ -37,15 +36,12 @@ public:
         // what happens on earth???
         // if connection has been destroyed, thread will not execute continue
         // another bug you should pay attention to
-        std::lock_guard<std::mutex> ul(_mtx);
+        std::lock_guard<std::mutex> lg(_mtx);
         for(char ch : msg) {
             _out_buf[_out_cur++] = ch;
         }
         // 新数据到来，重新激活写事件
-	printf("new msg come: %d\n", _sock->fd());
-        // epoll rm do nothing...... please repair this
-	    _multiplex->rm(_sock->fd());
-	    _multiplex->add(_sock->fd());
+	    _multiplex->mod(_sock->fd());
     }
 
     // cnt == 0 说明不了神么: 可能因为压根就没有数据要写，也可能因为缓冲区一直阻塞写不进去。
@@ -69,9 +65,7 @@ public:
             // 手动上下树，防止边缘触发 “永久丢失写事件”
             // 没有数据要写了，永久丢失是一件好事情，有新数据到来时会重新激活
 	        if(_out_cur != 0 && !status) {
-                // epoll rm do nothing...... please repair this
-	            _multiplex->rm(_sock->fd());
-	            _multiplex->add(_sock->fd());
+	            _multiplex->mod(_sock->fd());
 	        }
         }
         return cnt;
@@ -80,11 +74,11 @@ public:
     // total == 0 表明是断开连接请求
     // cnt == -1 表示接收出错，断开连接
     int recv_http() {
-        int total = 0;
+        int total = 0, status = 0;
         while(true) {
             // 一次可能接收不完，先接收一部分，处理了，再接收剩下部分
             int need = sizeof(_in_buf) - _in_cur;
-            int cnt = _sock->sock_recv(_in_buf + _in_cur, need);
+            int cnt = _sock->sock_recv(_in_buf + _in_cur, need, status);
             if(cnt == -1) {
                 return cnt;
             }
@@ -117,3 +111,4 @@ public:
     }
 };
 #endif //WEBSERVER_CONNECTION_H
+

@@ -10,8 +10,7 @@ public:
     int operator()(std::string msg, std::function<void(const std::string&)> callback) {
         FileHandler file("../root");
         DirectoryHandler dir("../root");
-
-        std::string temp;
+	    std::string temp;
         std::map<std::string, std::string> mp = Http::parse(msg);
 
         std::string url = mp[Pron[Prop::URL]];

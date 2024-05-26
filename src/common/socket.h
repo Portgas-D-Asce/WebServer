@@ -9,11 +9,9 @@
 class Socket {
 private:
     int _fd;
-    static int _in_cnt;
 private:
     explicit Socket(int fd) {
         _fd = fd;
-        _in_cnt++;
     }
 public:
     Socket() {
@@ -21,10 +19,6 @@ public:
     }
 
     ~Socket() {
-        static int cnt = 0;
-        _in_cnt--;
-        cnt++;
-        printf("%d, fd: %d will be closed! %d\n", cnt, _fd, _in_cnt);
         close(_fd);
     }
 
@@ -49,12 +43,14 @@ public:
     void sock_listen(int cnt) const {
         if(listen(_fd, cnt) == -1) {
             perror("listen");
+	    exit(1);
         }
     }
 
     void sock_connect(const struct sockaddr_in& addr) const {
         if(connect(_fd, (struct sockaddr *)&(addr), sizeof(addr)) == -1) {
             perror("connect");
+	    exit(1);
         }
     }
 
@@ -89,7 +85,7 @@ public:
                     continue;
                 }
                 if(errno == EAGAIN || errno == EWOULDBLOCK) {
-			        status = 1;
+		    status = 1;
                     return temp - sz;
                 }
                 perror("send");
@@ -102,8 +98,8 @@ public:
         return temp;
     }
 
-    int sock_recv(char *buf, int sz) const {
-        long long temp = sz;
+    int sock_recv(char *buf, int sz, int& status) const {
+        int temp = sz;
         while(sz > 0) {
             int cnt = recv(_fd, buf, sz, 0);
             if(cnt == -1) {
@@ -113,6 +109,7 @@ public:
                 }
                 // 数据读完了
                 if(errno == EAGAIN || errno == EWOULDBLOCK) {
+		    status = 1;
                     return temp - sz;
                 }
                 perror("recv");
@@ -120,7 +117,7 @@ public:
                 return -1;
             }
             if(cnt == 0) {
-                printf("recv close\n");
+                //printf("recv close\n");
                 return 0;
             }
             sz -= cnt;
@@ -132,10 +129,6 @@ public:
     int fd() const {
         return _fd;
     }
-
 };
-
-int Socket::_in_cnt = 0;
-
-
 #endif //WEBSERVER_SOCKET_H
+

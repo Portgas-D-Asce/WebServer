@@ -47,6 +47,9 @@ public:
         t.append(Pron[Prop::CONTENT_TYPE] + Sen[Sep::COLON] +
                  Mime[suf] + Sen[Sep::CRLF]);
 
+	    t.append(Pron[Prop::CONNECTION] + Sen[Sep::COLON] +
+                "keep-alive" + Sen[Sep::CRLF]);
+
         t.append(Pron[Prop::CONTENT_LENGTH] + Sen[Sep::COLON] +
                  std::to_string(s.size()) + Sen[Sep::CRLF]);
 

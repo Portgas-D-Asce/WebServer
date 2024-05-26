@@ -23,7 +23,7 @@ public:
 
         // 我艹 构造函数只会调用一次
         //_sub_reactors = std::vector<std::shared_ptr<SReactor>>(2, std::make_shared<SReactor>(_pool));
-        int n = 2;
+        int n = 1;
         _sub_reactors = std::vector<std::shared_ptr<SReactor>>(n, std::make_shared<SReactor>());
         for(int i = 0; i < n; ++i) {
             _sub_reactors[i] =  std::make_shared<SReactor>();
@@ -47,7 +47,7 @@ public:
         // 将 client fd 加入到 sub reactor
         static int cnt = 0;
         _sub_reactors[cnt & 1]->connect(fd);
-        cnt++;
+        //cnt++;
     }
 
     void start() {
