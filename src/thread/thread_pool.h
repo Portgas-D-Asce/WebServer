@@ -10,6 +10,7 @@
 #include <future>
 #include <functional>
 #include <stdexcept>
+#include "../config/config.h"
 
 class ThreadPool {
 public:
@@ -23,7 +24,7 @@ public:
         static std::once_flag flag;
         call_once(flag, [&](){
             _instance = std::unique_ptr<ThreadPool>(
-                new ThreadPool(2));
+                new ThreadPool(Config::WORKER_SIZE));
         });
         return *_instance;
     }
