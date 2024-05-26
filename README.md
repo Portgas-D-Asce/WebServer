@@ -1,32 +1,22 @@
 # 项目简介
-主从 Reactor，多线程高并发服务器。客户端并发访问服务器上各种 MIME 类型
-的文件资源
+多线程高并发服务器，允许客户端并发访问服务器上各种 MIME 类型的文件资源
 
-## 涉及技术
+支持 select、poll、epoll 三种 IO 多路复用
+- select：最大文件描述符：1024 
+- poll：最大文件描述符：2048 
+- epoll：最大文件描述符：65535，水平模式 + 边缘模式
+
+支持主从 Reactor，主从 Reactor 任意搭配
+- 单个 Main Reactor，多个 Sub Reactor 
+- 主 select 从 epoll，主 epoll 从 epoll 等。
+
+
+# 涉及技术
 socket 网络编程、IO 多路复用、多线程、泛型编程
 
 智能指针、C++11 线程、互斥锁
 
 单例模式
-
-## IO 多路复用
-支持 select、poll、epoll 三种 IO 多路复用
-
-### select
-最大文件描述符：1024
-
-### poll
-最大文件描述符：2048
-
-### epoll
-最大文件描述符：65535
-
-水平模式 + 边缘模式
-
-## Reactor
-主从 Reactor：单个 Main Reactor，多个 Sub Reactor
-
-主从 Reactor 任意搭配：主 select 从 epoll，主 epoll 从 epoll 等。
 
 # 模块
 
