@@ -14,11 +14,11 @@
 
 class ThreadPool {
 public:
+    friend class std::default_delete<ThreadPool>;
+
     template<typename F, typename... Args>
     auto enqueue(F&& f, Args&&... args)
         -> std::future<typename std::result_of<F(Args...)>::type>;
-
-    ~ThreadPool();
 
     static ThreadPool& get_instance() {
         static std::once_flag flag;
@@ -30,6 +30,7 @@ public:
     }
 private:
     explicit ThreadPool(size_t cnt);
+    ~ThreadPool();
 private:
     // need to keep track of threads, so we can join them
     std::vector<std::thread> _workers;
