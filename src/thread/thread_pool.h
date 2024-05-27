@@ -14,68 +14,73 @@
 
 class ThreadPool {
 public:
-    friend class std::default_delete<ThreadPool>;
+    static ThreadPool& get_instance();
 
     template<typename F, typename... Args>
     auto enqueue(F&& f, Args&&... args)
         -> std::future<typename std::result_of<F(Args...)>::type>;
 
-    static ThreadPool& get_instance() {
-        static std::once_flag flag;
-        call_once(flag, [&](){
-            _instance = std::unique_ptr<ThreadPool>(
-                new ThreadPool(Config::WORKER_SIZE));
-        });
-        return *_instance;
-    }
 private:
+    friend class std::default_delete<ThreadPool>;
     explicit ThreadPool(size_t cnt);
+    ThreadPool(const ThreadPool&) = delete;
+    ThreadPool& operator=(const ThreadPool&) = delete;
     ~ThreadPool();
+
+    void routing();
 private:
     // need to keep track of threads, so we can join them
     std::vector<std::thread> _workers;
     // the task queue
     std::queue<std::function<void()>> _tasks;
     // synchronization
-    std::mutex _mtx;
-    std::condition_variable _cv;
+    mutable std::mutex _mtx;
+    mutable std::condition_variable _cv;
     bool _stop;
 
+    //singleton
     static std::unique_ptr<ThreadPool> _instance;
 };
 
 std::unique_ptr<ThreadPool> ThreadPool::_instance = nullptr;
 
-// the constructor just launches some amount of workers
-inline ThreadPool::ThreadPool(size_t cnt) : _stop(false) {
-    auto routing = [this]() {
-        for (;;) {
-            std::function<void()> task;
-            // printf("thread id: %d\n", std::this_thread::get_id());
+inline ThreadPool& ThreadPool::get_instance() {
+    static std::once_flag flag;
+    call_once(flag, [&](){
+        _instance = std::unique_ptr<ThreadPool>(
+            new ThreadPool(Config::WORKER_SIZE));
+    });
+    return *_instance;
+}
 
-            {
-                std::unique_lock<std::mutex> lock(this->_mtx);
-                // stop == false && task.empty() -> 阻塞
-                this->_cv.wait(lock, [this] {
-                    return this->_stop || !this->_tasks.empty();
-                });
+void ThreadPool::routing() {
+    std::function<void()> task;
+    for(;;) {
+        {
+            std::unique_lock<std::mutex> lock(this->_mtx);
+            // stop == false && task.empty() -> 阻塞
+            this->_cv.wait(lock, [this] {
+                return this->_stop || !this->_tasks.empty();
+            });
 
-                // stop == true && task.empty() -> 结束线程
-                if (this->_stop && this->_tasks.empty()) {
-                    return;
-                }
-
-                // !task.empty() -> 继续运行
-                task = std::move(this->_tasks.front());
-                this->_tasks.pop();
+            // stop == true && task.empty() -> 结束线程
+            if (this->_stop && this->_tasks.empty()) {
+                return;
             }
 
-            task();
+            // !task.empty() -> 继续运行
+            task = std::move(this->_tasks.front());
+            this->_tasks.pop();
         }
-    };
 
+        task();
+    }
+}
+
+// the constructor just launches some amount of workers
+inline ThreadPool::ThreadPool(size_t cnt) : _stop(false) {
     for(size_t i = 0; i < cnt ; ++i) {
-        _workers.emplace_back(routing);
+        _workers.emplace_back(std::bind(&ThreadPool::routing, this));
     }
 }
 
