@@ -8,6 +8,7 @@
 #include "../common/connection.h"
 #include "../handler/handler.h"
 #include "../thread/thread_pool.h"
+#include "../config/config.h"
 
 template<typename Multiplex>
 class SubReactor {
@@ -21,13 +22,11 @@ private:
     mutable std::mutex _mtx;
     mutable std::mutex _event_mtx;
 public:
-    SubReactor() {
-        static int id = 0;
+    SubReactor(int id) {
         auto read_callback = std::bind(&SubReactor::read_callback, this, std::placeholders::_1);
         auto write_callback = std::bind(&SubReactor::write_callback, this, std::placeholders::_1);
-        std::string name = "sub reactor " + std::to_string(id);
+        std::string name = Config::SUB_REACTOR_NAME + " " + std::to_string(id);
         _multiplex = std::make_shared<Multiplex>(read_callback, write_callback, name);
-        id++;
     }
 
     void event_callback(const std::string& msg, int fd, long long id) const {

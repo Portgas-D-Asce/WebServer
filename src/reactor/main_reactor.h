@@ -18,7 +18,7 @@ public:
     MainReactor(const std::shared_ptr<Socket>& sock) : _sock(sock) {
         auto read_callback = std::bind(&MainReactor::read_callback, this, std::placeholders::_1);
         auto write_callback = std::bind(&MainReactor::write_callback, this, std::placeholders::_1);
-        _multiplex = std::make_shared<MainMultiplex>(read_callback, write_callback, "main reactor");
+        _multiplex = std::make_shared<MainMultiplex>(read_callback, write_callback, Config::MAIN_REACTOR_NAME);
 
         _multiplex->add(_sock->fd());
 
@@ -27,7 +27,7 @@ public:
         int n = Config::SUB_REACTOR_SIZE;
         _sub_reactors = std::vector<std::shared_ptr<SReactor>>(n);
         for(int i = 0; i < n; ++i) {
-            _sub_reactors[i] = std::make_shared<SReactor>();
+            _sub_reactors[i] = std::make_shared<SReactor>(i);
         }
     }
 
