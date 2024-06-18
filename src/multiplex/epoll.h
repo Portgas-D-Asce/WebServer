@@ -5,8 +5,9 @@
 class EPoll {
 public:
     const static int MX = 65535;
+    const static int MX_EVENT = 1024;
 private:
-    struct epoll_event _evs[1024];
+    struct epoll_event _evs[MX_EVENT];
     int _fd;
     std::function<void(int)> _read_callback;
     std::function<void(int)> _write_callback;
@@ -51,7 +52,7 @@ public:
 
     void dispatch() {
         while(true) {
-            int cnt = epoll_wait(_fd, _evs, sizeof(_evs), 0);
+            int cnt = epoll_wait(_fd, _evs, MX_EVENT, 0);
             if(cnt < 0) {
                 perror("epoll wait");
                 exit(1);
