@@ -8,6 +8,7 @@ public:
     const static int SUB_REACTOR_SIZE = 1;
     const static int LISTEN_QUEUE_SIZE = 10000;
     const static int WORKER_SIZE = 1;
+    const static int EPOLL_MX_EVENT = 1024;
 };
 
 

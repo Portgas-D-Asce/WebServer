@@ -1,13 +1,13 @@
 #ifndef WEBSERVER_EPOLL_H
 #define WEBSERVER_EPOLL_H
 #include <sys/epoll.h>
+#include "../config/config.h"
 
 class EPoll {
 public:
     const static int MX = 65535;
-    const static int MX_EVENT = 1024;
 private:
-    struct epoll_event _evs[MX_EVENT];
+    struct epoll_event _evs[Config::EPOLL_MX_EVENT];
     int _fd;
     std::function<void(int)> _read_callback;
     std::function<void(int)> _write_callback;
@@ -52,7 +52,7 @@ public:
 
     void dispatch() {
         while(true) {
-            int cnt = epoll_wait(_fd, _evs, MX_EVENT, 0);
+            int cnt = epoll_wait(_fd, _evs, Config::EPOLL_MX_EVENT, 0);
             if(cnt < 0) {
                 perror("epoll wait");
                 exit(1);
