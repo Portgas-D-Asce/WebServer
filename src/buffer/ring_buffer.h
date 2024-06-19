@@ -27,29 +27,13 @@ public:
         return _end - _start;
     }
 
-    void expand() {
-        size_t n = _buff.size(), mask = n - 1;
-        // 申请新缓冲区
-        std::string temp(n << 1, '\0');
-        // 拷贝数据
-        for(size_t i = _start, j = 0; i != _end; ++i, ++j) {
-            temp[j] = _buff[i & mask];
-        }
-        // 更新起点, 终点
-        _end -= _start;
-        _start = 0;
-        // 启用新缓冲区
-        _buff = std::move(temp);
-    }
-
     // 向缓冲区中写入数据
     void write(const char *s, size_t len) {
         // 总数据 = 当前数据 + 需要写入数据, 如果大于等于缓冲区大小, 则扩容, 直到可以容纳数据
         // 等于时也要扩容, 因为环形缓冲区不能放满
-        // 多次扩容肯定不合适, 后续优化
-        for(size_t i = 0; size() + len >= _buff.size(); ++i) {
-            expand();
-        }
+        size_t multi = 0;
+        while((size() + len) >= (_buff.size() << multi)) ++multi;
+        if(multi) _expand(multi);
 
         // 将数据写入缓冲区
         size_t n = _buff.size(), mask = n - 1;
@@ -80,10 +64,8 @@ public:
             cur = (cur << 8) | _buff[_center & mask];
             if(cur != tar) continue;
             msgs.push_back(std::string(_center - _start + 1, '\0'));
-            std::string& msg = msgs.back();
-            for(size_t i = 0; _start <= _center; ++_start, ++i) {
-                msg[i] = _buff[_start & mask];
-            }
+            _copy(msgs.back());
+            _start = _center + 1;
             _center = _start + m - 1;
         }
         return msgs;
@@ -115,6 +97,28 @@ public:
         _start += cnt;
 
         return cnt;
+    }
+private:
+    void _copy(std::string& t) {
+        size_t mask = _buff.size() - 1, rel_start = _start & mask, rel_end = _end & mask;
+        if(rel_start <= rel_end) {
+            std::copy(_buff.begin() + rel_start, _buff.begin() + rel_end, t.begin());
+        } else {
+            auto it = std::copy(_buff.begin() + rel_start, _buff.end(), t.begin());
+            std::copy(_buff.begin(), _buff.begin() + rel_end, it);
+        }
+    }
+
+    void _expand(size_t multi) {
+        // 申请新缓冲区
+        std::string temp(_buff.size() << multi, '\0');
+        // 拷贝数据
+        _copy(temp);
+        // 更新起点, 终点
+        _end -= _start;
+        _start = 0;
+        // 启用新缓冲区
+        _buff = std::move(temp);
     }
 };
 #endif //WEBSERVER_RING_BUFFER_H
