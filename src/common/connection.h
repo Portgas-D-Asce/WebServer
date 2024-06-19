@@ -6,7 +6,7 @@
 #include <mutex>
 #include "../config/config.h"
 #include "socket.h"
-#include "../buffer/buffer.h"
+#include "../buffer/ring_buffer.h"
 
 template<typename Multiplex>
 class Connection {
@@ -18,8 +18,8 @@ private:
     // use id identify a connection unique
     long long _id;
 
-    Buffer _in_buff;
-    Buffer _out_buff;
+    RingBuffer _in_buff;
+    RingBuffer _out_buff;
 
 public:
     Connection() {};

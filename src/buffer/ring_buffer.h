@@ -1,11 +1,11 @@
-#ifndef WEBSERVER_BUFFER_H
-#define WEBSERVER_BUFFER_H
+#ifndef WEBSERVER_RING_BUFFER_H
+#define WEBSERVER_RING_BUFFER_H
 #include <string>
 #include <vector>
 #include <memory>
 #include "../common/socket.h"
 
-class Buffer {
+class RingBuffer {
 private:
     std::string _buff;
     // _start 起点
@@ -14,7 +14,7 @@ private:
     size_t _start, _center, _end;
 public:
     // n 要求必须为 2 的幂
-    explicit Buffer(size_t n) : _buff(n, '\0'), _start(0), _center(0), _end(0) {}
+    explicit RingBuffer(size_t n) : _buff(n, '\0'), _start(0), _center(0), _end(0) {}
 
     // _start == _end 表示没有数据
     bool empty() const {
@@ -117,4 +117,4 @@ public:
         return cnt;
     }
 };
-#endif //WEBSERVER_BUFFER_H
+#endif //WEBSERVER_RING_BUFFER_H
