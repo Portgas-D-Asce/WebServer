@@ -6,6 +6,7 @@
 #include <mutex>
 #include "../config/config.h"
 #include "socket.h"
+#include "../buffer/input_buffer.h"
 
 template<typename Multiplex>
 class Connection {
@@ -17,8 +18,7 @@ private:
     // use id identify a connection unique
     long long _id;
 
-    int _in_cur;
-    char _in_buf[Config::BUFFER_SIZE];
+    InputBuffer _in_buff;
 
     int _out_cur;
     char _out_buf[Config::BUFFER_SIZE];
@@ -26,11 +26,10 @@ private:
 public:
     Connection() {};
     Connection(const std::shared_ptr<Socket>& fd, const std::shared_ptr<Multiplex>& multiplex)
-        : _sock(fd), _multiplex(multiplex) {
+        : _sock(fd), _multiplex(multiplex), _in_buff(Config::BUFFER_SIZE) {
         static long long idx = 0;
         _id = idx++;
         //_multiplex->add(_sock->fd());
-        _in_cur = 0;
         _out_cur = 0;
     }
 
@@ -82,35 +81,20 @@ public:
     // cnt == -1 表示接收出错，断开连接
     int recv_http(std::vector<std::string>& msgs) {
         int total = 0, status = 0;
+        char buff[1024] = {0};
         while(true) {
-            // 一次可能接收不完，先接收一部分，处理了，再接收剩下部分
-            int need = sizeof(_in_buf) - _in_cur;
-            int cnt = _sock->sock_recv(_in_buf + _in_cur, need, status);
+            int cnt = _sock->sock_recv(buff, sizeof(buff), status);
             if(cnt == -1) {
                 return cnt;
             }
             if(cnt == 0) {
-                return total;
+                break;
             }
-
-            int temp = std::max(_in_cur, 3), pre = 0;
-            total += cnt; _in_cur += cnt;
-            for(int i = temp; i < _in_cur; ++i) {
-                if(_in_buf[i] == '\n' && _in_buf[i - 1] == '\r' && _in_buf[i - 2] == '\n' && _in_buf[i - 3] == '\r') {
-                    msgs.emplace_back(_in_buf + pre, i + 1 - pre);
-                    pre = i + 1;
-                }
-            }
-            // 距离上次没有发生移动，消息已经接收完了
-            if(pre == 0) {
-                return total;
-            }
-            int idx = 0;
-            for(int i = pre; i < _in_cur; ++i, ++idx) {
-                _in_buf[idx++] = _in_buf[i];
-            }
-            _in_cur = idx;
+            total += cnt;
+            _in_buff.write(buff, cnt);
         }
+        msgs = _in_buff.read("\r\n\r\n");
+        return total;
     }
 };
 #endif //WEBSERVER_CONNECTION_H
