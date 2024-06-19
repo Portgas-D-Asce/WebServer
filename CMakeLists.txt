@@ -18,8 +18,7 @@ add_executable(server src/server.cpp
         src/http/http_header.h
         src/html/html.h
         src/config/config.h
-        src/buffer/input_buffer.h
-        src/buffer/output_buffer.h
+        src/buffer/buffer.h
 )
 target_link_libraries(server -lpthread)
 

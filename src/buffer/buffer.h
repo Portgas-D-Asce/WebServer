@@ -1,9 +1,11 @@
-#ifndef WEBSERVER_INPUT_BUFFER_H
-#define WEBSERVER_INPUT_BUFFER_H
+#ifndef WEBSERVER_BUFFER_H
+#define WEBSERVER_BUFFER_H
 #include <string>
 #include <vector>
+#include <memory>
+#include "../common/socket.h"
 
-class InputBuffer {
+class Buffer {
 private:
     std::string _buff;
     // _start 起点
@@ -12,7 +14,7 @@ private:
     size_t _start, _center, _end;
 public:
     // n 要求必须为 2 的幂
-    explicit InputBuffer(size_t n) : _buff(n, '\0'), _start(0), _center(0), _end(0) {}
+    explicit Buffer(size_t n) : _buff(n, '\0'), _start(0), _center(0), _end(0) {}
 
     // _start == _end 表示没有数据
     bool empty() const {
@@ -57,7 +59,7 @@ public:
     }
 
     // 从缓冲区中读取消息
-    std::vector<std::string> read(const std::string& split) {
+    std::vector<std::string> read_msg(const std::string& split) {
         size_t m = split.size(), mask = _buff.size() - 1;
         // 计算消息分隔符 "hash" 值
         unsigned int tar = 0;
@@ -86,5 +88,33 @@ public:
         }
         return msgs;
     }
+
+    int send_msg(const std::shared_ptr<Socket>& sock, int& status) {
+        if(empty()) return 0;
+        size_t n = _buff.size(), mask = n - 1;
+        size_t rel_start = _start & mask, rel_end = _end & mask;
+
+        // 如果数据没有跨越缓冲区末尾, 一次性发送就好了
+        if(rel_end > rel_start) {
+            int cnt = sock->sock_send(_buff.c_str() + rel_start, rel_end - rel_start, status);
+            if(cnt == -1) return -1;
+            _start += cnt;
+            return cnt;
+        }
+
+        // 数据跨越了缓冲区末尾，必须分两部分发送
+        int cnt = sock->sock_send(_buff.c_str() + rel_start, n - rel_start, status);
+        if(cnt == -1) return -1;
+
+        // 如果以数据没写完方式返回, 那就是缓冲区写满了, 就不要再继续写了
+        if(cnt == n - rel_start) {
+            int temp = sock->sock_send(_buff.c_str(), rel_end, status);
+            if(temp == -1) return -1;
+            cnt += temp;
+        }
+        _start += cnt;
+
+        return cnt;
+    }
 };
-#endif //WEBSERVER_INPUT_BUFFER_H
+#endif //WEBSERVER_BUFFER_H
