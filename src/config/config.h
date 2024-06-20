@@ -7,7 +7,7 @@ public:
     const static int BUFFER_SIZE = 1024 * 8;
     const static int SUB_REACTOR_SIZE = 2;
     const static int LISTEN_QUEUE_SIZE = 10000;
-    const static int WORKER_SIZE = 4;
+    const static int WORKER_SIZE = 1;
     const static int EPOLL_MX_EVENT = 1024;
     const static std::string MAIN_REACTOR_NAME;
     const static std::string SUB_REACTOR_NAME;

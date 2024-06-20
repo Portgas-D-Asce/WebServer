@@ -75,29 +75,7 @@ public:
         fcntl(_fd, F_SETFL, flags | O_NONBLOCK);
     }
 
-    // int sock_send(const char* buf, int sz, int& status) const {
-    //     int temp = sz;
-    //     while(sz > 0) {
-    //         int cnt = send(_fd, (void *)buf, sz, 0);
-    //         if(cnt == -1) {
-    //             // 被打断了
-    //             if(errno == EINTR) {
-    //                 continue;
-    //             }
-    //             if(errno == EAGAIN || errno == EWOULDBLOCK) {
-	// 	    status = 1;
-    //                 return temp - sz;
-    //             }
-    //             perror("send");
-    //             printf("errno = %d\n", errno);
-    //             return -1;
-    //         }
-    //         sz -= cnt;
-    //         buf += cnt;
-    //     }
-    //     return temp;
-    // }
-
+    // 只有三种返回原因: 数据发送出错返回, 数据发送完了返回, 缓冲区满了返回
     int sock_send(const char* buf, int sz) const {
         int temp = sz;
         while(sz > 0) {
@@ -120,34 +98,7 @@ public:
         return temp;
     }
 
-    // int sock_recv(char *buf, int sz, int& status) const {
-    //     int temp = sz;
-    //     while(sz > 0) {
-    //         int cnt = recv(_fd, buf, sz, 0);
-    //         if(cnt == -1) {
-    //             // 被打断了
-    //             if(errno == EINTR) {
-    //                 continue;
-    //             }
-    //             // 数据读完了
-    //             if(errno == EAGAIN || errno == EWOULDBLOCK) {
-	// 	    status = 1;
-    //                 return temp - sz;
-    //             }
-    //             perror("recv");
-    //             printf("errno = %d\n", errno);
-    //             return -1;
-    //         }
-    //         if(cnt == 0) {
-    //             //printf("recv close\n");
-    //             return 0;
-    //         }
-    //         sz -= cnt;
-    //         buf += cnt;
-    //     }
-    //     return temp;
-    // }
-
+    // 只有三种返回原因: 数据发接收出错返回, 数据接收够了返回, 缓冲区已经没有数据了返回
     int sock_recv(char *buf, int sz) const {
         int temp = sz;
         while(sz > 0) {
