@@ -3,7 +3,6 @@
 #include <arpa/inet.h>
 #include <memory>
 #include <vector>
-#include <mutex>
 #include "../config/config.h"
 #include "socket.h"
 #include "../buffer/ring_buffer.h"
@@ -12,7 +11,6 @@ template<typename Multiplex>
 class Connection {
 private:
     std::shared_ptr<Socket> _sock;
-    mutable std::mutex _mtx;
     // sock fd can't identify a connection unique
     // use id identify a connection unique
     long long _id;
@@ -33,29 +31,11 @@ public:
     }
 
     void callback(const std::string& msg) {
-        std::lock_guard<std::mutex> lg(_mtx);
         _out_buff.write(msg.c_str(), msg.size());
     }
 
-    // cnt == 0 说明不了神么: 可能因为压根就没有数据要写，也可能因为缓冲区一直阻塞写不进去。
-    // cnt == -1 接收异常，表明接收出错，断开连接，重置输出缓冲区已经不重要了。
     int send_http() {
-        int cnt = 0;
-        {
-            std::lock_guard<std::mutex> ul(_mtx);
-            if(!_out_buff.empty()) {
-                cnt = _out_buff.send_msg(_sock);
-                if(cnt == -1) return -1;
-            }
-
-            // 如果还有数据要写，且以 “缓冲区未被写满” 的状态返回(never happen!)
-            // 手动上下树，防止边缘触发 “永久丢失写事件”
-            // 没有数据要写了，永久丢失是一件好事情，有新数据到来时会重新激活
-            // if(!_out_buff.empty() && !status) {
-            //     _multiplex->mod(_sock->fd());
-            // }
-        }
-        return cnt;
+        return _out_buff.send_msg(_sock);
     }
 
     int recv_http(std::vector<std::string>& msgs) {

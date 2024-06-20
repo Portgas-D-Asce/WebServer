@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <unistd.h>
 #include "../common/socket.h"
 
 class RingBuffer {
@@ -12,6 +13,7 @@ private:
     // _end 终点（不包含）
     // _center 检查消息分隔符检查到哪里了
     size_t _start, _center, _end;
+    mutable std::mutex _mtx;
 public:
     // n 要求必须为 2 的幂
     explicit RingBuffer(size_t n) : _buff(n, '\0'), _start(0), _center(0), _end(0) {}
@@ -31,6 +33,7 @@ public:
     void write(const char *s, size_t len) {
         // 总数据 = 当前数据 + 需要写入数据, 如果大于等于缓冲区大小, 则扩容, 直到可以容纳数据
         // 等于时也要扩容, 因为环形缓冲区不能放满
+        std::lock_guard<std::mutex> lg(_mtx);
         size_t multi = 0;
         while((size() + len) >= (_buff.size() << multi)) ++multi;
         if(multi) _expand(multi);
@@ -44,6 +47,8 @@ public:
 
     // 从缓冲区中读取消息
     std::vector<std::string> read_msg(const std::string& split) {
+        if(empty()) return {};
+
         size_t m = split.size(), mask = _buff.size() - 1;
         // 计算消息分隔符 "hash" 值
         unsigned int tar = 0;
@@ -72,6 +77,7 @@ public:
     }
 
     int send_msg(const std::shared_ptr<Socket>& sock) {
+        std::lock_guard<std::mutex> lg(_mtx);
         if(empty()) return 0;
         size_t n = _buff.size(), mask = n - 1;
         size_t rel_start = _start & mask, rel_end = _end & mask;
