@@ -19,7 +19,7 @@ public:
     }
 
     ~Socket() {
-        close(_fd);
+        // close(_fd);
     }
 
     Socket(const Socket&) = delete;
