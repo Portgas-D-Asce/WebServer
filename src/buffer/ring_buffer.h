@@ -1,6 +1,7 @@
 #ifndef WEBSERVER_RING_BUFFER_H
 #define WEBSERVER_RING_BUFFER_H
 #include <string>
+#include <mutex>
 #include <vector>
 #include <memory>
 #include <unistd.h>
