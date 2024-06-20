@@ -30,7 +30,7 @@ public:
     }
 
     // 向缓冲区中写入数据
-    void write(const char *s, size_t len) {
+    void write_msg(const char *s, size_t len) {
         // 总数据 = 当前数据 + 需要写入数据, 如果大于等于缓冲区大小, 则扩容, 直到可以容纳数据
         // 等于时也要扩容, 因为环形缓冲区不能放满
         std::lock_guard<std::mutex> lg(_mtx);
@@ -45,35 +45,22 @@ public:
         }
     }
 
-    // 从缓冲区中读取消息
-    std::vector<std::string> read_msg(const std::string& split) {
-        if(empty()) return {};
-
-        size_t m = split.size(), mask = _buff.size() - 1;
-        // 计算消息分隔符 "hash" 值
-        unsigned int tar = 0;
-        for(size_t i = 0; i < m; ++i) {
-            tar = (tar << 8) | split[i];
+    int recv_msg(const std::shared_ptr<Socket>& sock, const std::string& split, std::vector<std::string>& msgs) {
+        int total = 0;
+        char buff[4096] = {0};
+        while(true) {
+            int cnt = sock->sock_recv(buff, sizeof(buff));
+            if(cnt == -1) {
+                return cnt;
+            }
+            if(cnt == 0) {
+                break;
+            }
+            total += cnt;
+            write_msg(buff, cnt);
         }
-
-        // 至少要从 start + m - 1 处开始比较
-        _center = std::max(_center, _start + m - 1);
-        unsigned int cur = 0;
-        for(size_t i = _center + 1 - m; i < _center; ++i) {
-            cur = (cur << 8) | _buff[i & mask];
-        }
-
-        // 读取消息
-        std::vector<std::string> msgs;
-        for( ;_center < _end; ++_center) {
-            cur = (cur << 8) | _buff[_center & mask];
-            if(cur != tar) continue;
-            msgs.push_back(std::string(_center - _start + 1, '\0'));
-            _copy(msgs.back());
-            _start = _center + 1;
-            _center = _start + m - 1;
-        }
-        return msgs;
+        msgs = _read_msg(split);
+        return total;
     }
 
     int send_msg(const std::shared_ptr<Socket>& sock) {
@@ -121,6 +108,37 @@ private:
         _start = 0;
         // 启用新缓冲区
         _buff = std::move(temp);
+    }
+
+    // 从缓冲区中读取消息
+    std::vector<std::string> _read_msg(const std::string& split) {
+        if(empty()) return {};
+
+        size_t m = split.size(), mask = _buff.size() - 1;
+        // 计算消息分隔符 "hash" 值
+        unsigned int tar = 0;
+        for(size_t i = 0; i < m; ++i) {
+            tar = (tar << 8) | split[i];
+        }
+
+        // 至少要从 start + m - 1 处开始比较
+        _center = std::max(_center, _start + m - 1);
+        unsigned int cur = 0;
+        for(size_t i = _center + 1 - m; i < _center; ++i) {
+            cur = (cur << 8) | _buff[i & mask];
+        }
+
+        // 读取消息
+        std::vector<std::string> msgs;
+        for( ;_center < _end; ++_center) {
+            cur = (cur << 8) | _buff[_center & mask];
+            if(cur != tar) continue;
+            msgs.push_back(std::string(_center - _start + 1, '\0'));
+            _copy(msgs.back());
+            _start = _center + 1;
+            _center = _start + m - 1;
+        }
+        return msgs;
     }
 };
 #endif //WEBSERVER_RING_BUFFER_H

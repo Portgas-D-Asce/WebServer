@@ -14,7 +14,7 @@ template<typename Multiplex>
 class SubReactor {
 private:
     //std::map<int, std::shared_ptr<Connection<Multiplex>>> _clients;
-    std::shared_ptr<Connection<Multiplex>> _clients[Multiplex::MX];
+    std::shared_ptr<Connection> _clients[Multiplex::MX];
     std::shared_ptr<Multiplex> _multiplex;
     // a mutex is necessary:
     // main reactor thread insert connection into _client
@@ -59,7 +59,7 @@ public:
             // when connection is constructed, but _clients[fd] is nullptr
             // fd has been "up tree", so select/poll/epoll can receive even
             // when use _clients[fd] in write_callback and read_callback will segment fault
-            _clients[fd] = std::make_shared<Connection<Multiplex>>(sock);
+            _clients[fd] = std::make_shared<Connection>(sock);
 
             // to avoid using mutex in write_callback and read_callback,
             // so move it here from connection's constructor
