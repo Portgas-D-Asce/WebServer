@@ -37,6 +37,9 @@ public:
         }
 
         _clients[fd]->callback(msg);
+
+        // 新数据到来，重新激活写事件
+        _multiplex->mod(fd);
     }
 
     // main reactor thread
@@ -56,7 +59,8 @@ public:
             // when connection is constructed, but _clients[fd] is nullptr
             // fd has been "up tree", so select/poll/epoll can receive even
             // when use _clients[fd] in write_callback and read_callback will segment fault
-            _clients[fd] = std::make_shared<Connection<Multiplex>>(sock, _multiplex);
+            //_clients[fd] = std::make_shared<Connection<Multiplex>>(sock, _multiplex);
+            _clients[fd] = std::make_shared<Connection<Multiplex>>(sock);
 
             // to avoid using mutex in write_callback and read_callback,
             // so move it here from connection's constructor

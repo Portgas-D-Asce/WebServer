@@ -71,31 +71,53 @@ public:
         return msgs;
     }
 
-    int send_msg(const std::shared_ptr<Socket>& sock, int& status) {
+    //int send_msg(const std::shared_ptr<Socket>& sock, int& status) {
+    //    if(empty()) return 0;
+    //    size_t n = _buff.size(), mask = n - 1;
+    //    size_t rel_start = _start & mask, rel_end = _end & mask;
+    //    // 如果数据没有跨越缓冲区末尾, 一次性发送就好了
+    //    if(rel_end > rel_start) {
+    //        int cnt = sock->sock_send(_buff.c_str() + rel_start, rel_end - rel_start, status);
+    //        if(cnt == -1) return -1;
+    //        _start += cnt;
+    //        return cnt;
+    //    }
+
+    //    // 数据跨越了缓冲区末尾，必须分两部分发送
+    //    int cnt = sock->sock_send(_buff.c_str() + rel_start, n - rel_start, status);
+    //    if(cnt == -1) return -1;
+
+    //    // 如果以数据没写完方式返回, 那就是缓冲区写满了, 就不要再继续写了
+    //    if(cnt == n - rel_start) {
+    //        int temp = sock->sock_send(_buff.c_str(), rel_end, status);
+    //        if(temp == -1) return -1;
+    //        cnt += temp;
+    //    }
+    //    _start += cnt;
+    //    return cnt;
+    //}
+
+    int send_msg(const std::shared_ptr<Socket>& sock) {
         if(empty()) return 0;
         size_t n = _buff.size(), mask = n - 1;
         size_t rel_start = _start & mask, rel_end = _end & mask;
-
         // 如果数据没有跨越缓冲区末尾, 一次性发送就好了
         if(rel_end > rel_start) {
-            int cnt = sock->sock_send(_buff.c_str() + rel_start, rel_end - rel_start, status);
+            int cnt = sock->sock_send(_buff.c_str() + rel_start, rel_end - rel_start);
             if(cnt == -1) return -1;
             _start += cnt;
             return cnt;
         }
-
         // 数据跨越了缓冲区末尾，必须分两部分发送
-        int cnt = sock->sock_send(_buff.c_str() + rel_start, n - rel_start, status);
+        int cnt = sock->sock_send(_buff.c_str() + rel_start, n - rel_start);
         if(cnt == -1) return -1;
-
         // 如果以数据没写完方式返回, 那就是缓冲区写满了, 就不要再继续写了
         if(cnt == n - rel_start) {
-            int temp = sock->sock_send(_buff.c_str(), rel_end, status);
+            int temp = sock->sock_send(_buff.c_str(), rel_end);
             if(temp == -1) return -1;
             cnt += temp;
         }
         _start += cnt;
-
         return cnt;
     }
 private:

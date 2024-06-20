@@ -75,7 +75,30 @@ public:
         fcntl(_fd, F_SETFL, flags | O_NONBLOCK);
     }
 
-    int sock_send(const char* buf, int sz, int& status) const {
+    // int sock_send(const char* buf, int sz, int& status) const {
+    //     int temp = sz;
+    //     while(sz > 0) {
+    //         int cnt = send(_fd, (void *)buf, sz, 0);
+    //         if(cnt == -1) {
+    //             // 被打断了
+    //             if(errno == EINTR) {
+    //                 continue;
+    //             }
+    //             if(errno == EAGAIN || errno == EWOULDBLOCK) {
+	// 	    status = 1;
+    //                 return temp - sz;
+    //             }
+    //             perror("send");
+    //             printf("errno = %d\n", errno);
+    //             return -1;
+    //         }
+    //         sz -= cnt;
+    //         buf += cnt;
+    //     }
+    //     return temp;
+    // }
+
+    int sock_send(const char* buf, int sz) const {
         int temp = sz;
         while(sz > 0) {
             int cnt = send(_fd, (void *)buf, sz, 0);
@@ -85,7 +108,6 @@ public:
                     continue;
                 }
                 if(errno == EAGAIN || errno == EWOULDBLOCK) {
-		    status = 1;
                     return temp - sz;
                 }
                 perror("send");
@@ -98,7 +120,35 @@ public:
         return temp;
     }
 
-    int sock_recv(char *buf, int sz, int& status) const {
+    // int sock_recv(char *buf, int sz, int& status) const {
+    //     int temp = sz;
+    //     while(sz > 0) {
+    //         int cnt = recv(_fd, buf, sz, 0);
+    //         if(cnt == -1) {
+    //             // 被打断了
+    //             if(errno == EINTR) {
+    //                 continue;
+    //             }
+    //             // 数据读完了
+    //             if(errno == EAGAIN || errno == EWOULDBLOCK) {
+	// 	    status = 1;
+    //                 return temp - sz;
+    //             }
+    //             perror("recv");
+    //             printf("errno = %d\n", errno);
+    //             return -1;
+    //         }
+    //         if(cnt == 0) {
+    //             //printf("recv close\n");
+    //             return 0;
+    //         }
+    //         sz -= cnt;
+    //         buf += cnt;
+    //     }
+    //     return temp;
+    // }
+
+    int sock_recv(char *buf, int sz) const {
         int temp = sz;
         while(sz > 0) {
             int cnt = recv(_fd, buf, sz, 0);
@@ -109,7 +159,6 @@ public:
                 }
                 // 数据读完了
                 if(errno == EAGAIN || errno == EWOULDBLOCK) {
-		    status = 1;
                     return temp - sz;
                 }
                 perror("recv");
