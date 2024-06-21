@@ -45,8 +45,12 @@ public:
     }
 
     void rm(int fd) {
-	    // do nothing, becasue it has been down when we close fd
-	    // you can find it in man epoll Q6
+	    // old version: do nothing, becasue it has been down when we close fd, you can find it in man epoll Q6
+        // new version: down tree must be done before close
+        if(epoll_ctl(_fd, EPOLL_CTL_DEL, fd, NULL) == -1) {
+            perror("epoll_ctl_add");
+            exit(1);
+        }
         printf("%s remove attention: %d\n", _name.c_str(), fd);
     }
 
