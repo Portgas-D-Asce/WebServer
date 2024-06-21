@@ -20,20 +20,24 @@ public:
     }
 
     std::string wrapper(std::string path) {
-        if(path.back() == Sen[Sep::SLASH][0]) path.pop_back();
+        if(!path.empty() && path.back() == Sen[Sep::SLASH][0]) path.pop_back();
 
         std::string dir = _root + path;
         DIR* ptr = opendir(dir.c_str());
         struct dirent* ent;
 
         std::string content;
-        while((ent = readdir(ptr)) != nullptr) {
-            std::string url = path + Sen[Sep::SLASH] + ent->d_name;
-            std::string a = Html::a_wrapper(ent->d_name, url);
-            int size = file_size(url);
-            std::string tds = Html::td_wrapper(a) +
-                Html::td_wrapper(std::to_string(size));
-            content.append(Html::tr_wrapper(tds));
+        if(ptr == nullptr) {
+            content = "server busy(maybe fd used up), please wait a moment...";
+        } else {
+            while((ent = readdir(ptr)) != nullptr) {
+                std::string url = path + Sen[Sep::SLASH] + ent->d_name;
+                std::string a = Html::a_wrapper(ent->d_name, url);
+                int size = file_size(url);
+                std::string tds = Html::td_wrapper(a) +
+                                  Html::td_wrapper(std::to_string(size));
+                content.append(Html::tr_wrapper(tds));
+            }
         }
         content = Html::table_wrapper(content);
         content = Html::html_wrapper(path, content);
