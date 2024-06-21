@@ -2,12 +2,13 @@
 #define WEBSERVER_HANDLER_H
 #include <string>
 #include <functional>
+#include <sys/mman.h>
 #include "file_handler.h"
 #include "directory_handler.h"
 
 class Handler {
 public:
-    int operator()(std::string msg, std::function<void(const std::string&)> callback) {
+    int operator()(std::string msg, std::function<void(const char*, size_t)> callback) {
         FileHandler file("../root");
         DirectoryHandler dir("../root");
         std::string temp;
@@ -22,8 +23,15 @@ public:
             temp = file.wrapper("/404.html");
         }
 
+        char* _buff = (char*)mmap(nullptr, temp.size(), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        if(_buff == (void*)-1) {
+            perror("xxxx");
+        }
+
+        memcpy(_buff, temp.c_str(), temp.size());
+
         // callback 返回消息
-        callback(temp);
+        callback(_buff, temp.size());
         return 1;
     }
 };

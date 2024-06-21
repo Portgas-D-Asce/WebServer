@@ -2,7 +2,6 @@
 #define WEBSERVER_RING_BUFFER_H
 #include <string>
 #include <vector>
-#include <mutex>
 #include <memory>
 #include "../common/socket.h"
 
@@ -12,7 +11,6 @@ private:
     // _start 起点
     // _end 终点（不包含）
     size_t _start, _end;
-    mutable std::mutex _mtx;
 public:
     // n 要求必须为 2 的幂
     explicit RingBuffer(size_t n) : _buff(n, '\0'), _start(0), _end(0) {}
@@ -37,25 +35,25 @@ public:
     }
 
     // 向缓冲区中写入数据
-    void write_msg(const char* msg, size_t m, bool flag = true) {
+    void write_msg(const char* msg, size_t m) {
         // 总数据 = 当前数据 + 需要写入数据, 如果大于等于缓冲区大小, 则扩容, 直到可以容纳数据
         // 等于时也要扩容, 因为环形缓冲区不能放满
         size_t multi = 0, total = size() + m;
-        while(total >= (_buff.size() << multi)) ++multi;
-        if(flag) std::lock_guard<std::mutex> lg(_mtx);
+        while(total >= (capacity() << multi)) ++multi;
         if(multi) _expand(multi);
 
         // 将数据写入缓冲区
         _copy_to_ring(msg, m);
     }
 
-    int recv_msg(const std::shared_ptr<Socket>& sock, const std::string& split, std::vector<std::string>& msgs) {
-        int total = 0;
-        char buff[8192] = {0};
+    ssize_t recv_msg(const std::shared_ptr<Socket>& sock, const std::string& split, std::vector<std::string>& msgs) {
+        ssize_t total = 0;
         // 数据读完之后从 center 处开始查找消息分隔符号
-        size_t center = end();
+        size_t center = _end;
+
+        char buff[8192] = {0};
         while(true) {
-            int cnt = sock->sock_recv(buff, sizeof(buff));
+            ssize_t cnt = sock->sock_recv(buff, sizeof(buff));
             if(cnt == -1) {
                 return cnt;
             }
@@ -63,53 +61,12 @@ public:
                 break;
             }
             total += cnt;
-            write_msg(buff, cnt, false);
+            write_msg(buff, cnt);
         }
         msgs = _read_msg(split, center);
         return total;
     }
-
-    int send_msg(const std::shared_ptr<Socket>& sock) {
-        std::lock_guard<std::mutex> lg(_mtx);
-        if(empty()) return 0;
-        size_t n = capacity(), rel_start = real_start(), rel_end = real_end();
-        // 如果数据没有跨越缓冲区末尾, 一次性发送就好了
-        if(rel_end > rel_start) {
-            int cnt = sock->sock_send(_buff.c_str() + rel_start, rel_end - rel_start);
-            if(cnt == -1) return -1;
-            _start += cnt;
-            return cnt;
-        }
-        // 数据跨越了缓冲区末尾，必须分两部分发送
-        int cnt = sock->sock_send(_buff.c_str() + rel_start, n - rel_start);
-        if(cnt == -1) return -1;
-        // 如果以数据没写完方式返回, 那就是缓冲区写满了, 就不要再继续写了
-        if(cnt == n - rel_start) {
-            int temp = sock->sock_send(_buff.c_str(), rel_end);
-            if(temp == -1) return -1;
-            cnt += temp;
-        }
-        _start += cnt;
-        return cnt;
-    }
-
 private:
-    size_t start() const {
-        return _start;
-    }
-
-    size_t end() const {
-        return _end;
-    }
-
-    size_t real_start() const {
-        return _start & (capacity() - 1);
-    }
-
-    size_t real_end() const {
-        return _end & (capacity() - 1);
-    }
-
     void _copy_to_ring(const char* msg, size_t m) {
         size_t n = _buff.size(), rel_end = _end & (n - 1);
         if(n - rel_end >= m) {
@@ -164,7 +121,6 @@ private:
 
         // 读取消息
         std::vector<std::string> msgs;
-        msgs.reserve(10);
         for( ;center < _end; ++center) {
             cur = (cur << 8) | _buff[center & mask];
             if(cur != tar) continue;

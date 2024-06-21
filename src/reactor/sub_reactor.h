@@ -29,14 +29,14 @@ public:
         _multiplex = std::make_shared<Multiplex>(read_callback, write_callback, name);
     }
 
-    void event_callback(const std::string& msg, int fd, long long id) const {
+    void event_callback(const char* ptr, size_t len, int fd, long long id) const {
         std::lock_guard<std::mutex> lg(_event_mtx);
         // connection not exist
         if(!_clients[fd] || _clients[fd]->id() != id) {
             return;
         }
 
-        _clients[fd]->callback(msg);
+        _clients[fd]->callback(ptr, len);
 
         // 新数据到来，重新激活写事件
         _multiplex->mod(fd);
@@ -132,8 +132,8 @@ public:
         ThreadPool& pool = ThreadPool::get_instance();
         for(auto &msg : msgs) {
             long long id = _clients[fd]->id();
-            pool.enqueue(Handler(), std::move(msg), [this, fd, id](const std::string& resp) {
-                this->event_callback(resp, fd, id);
+            pool.enqueue(Handler(), std::move(msg), [this, fd, id](const char* ptr, size_t len) {
+                this->event_callback(ptr, len, fd, id);
             });
         }
     }

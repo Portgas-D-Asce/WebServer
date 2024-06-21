@@ -98,6 +98,29 @@ public:
         return temp;
     }
 
+    // 只有三种返回原因: 数据发送出错返回, 数据发送完了返回, 缓冲区满了返回
+    ssize_t sock_mmap_send(const char* buf, int sz) const {
+        ssize_t temp = sz;
+        while(sz > 0) {
+            ssize_t cnt = write(_fd, (void *)buf, sz);
+            if(cnt == -1) {
+                // 被打断了
+                if(errno == EINTR) {
+                    continue;
+                }
+                if(errno == EAGAIN || errno == EWOULDBLOCK) {
+                    return temp - sz;
+                }
+                perror("send");
+                printf("errno = %d\n", errno);
+                return -1;
+            }
+            sz -= cnt;
+            buf += cnt;
+        }
+        return temp;
+    }
+
     // 只有三种返回原因: 数据发接收出错返回, 数据接收够了返回, 缓冲区已经没有数据了返回
     int sock_recv(char *buf, int sz) const {
         int temp = sz;
