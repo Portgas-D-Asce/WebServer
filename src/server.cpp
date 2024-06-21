@@ -2,6 +2,7 @@
 #include "multiplex/select.h"
 #include "multiplex/poll.h"
 //#include "multiplex/epoll.h"
+#include "multiplex/kqueue.h"
 
 
 int main(int argc, char** argv) {

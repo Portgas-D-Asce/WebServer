@@ -19,6 +19,7 @@ add_executable(server src/server.cpp
         src/html/html.h
         src/config/config.h
         src/buffer/ring_buffer.h
+        src/multiplex/kqueue.h
 )
 target_link_libraries(server -lpthread)
 

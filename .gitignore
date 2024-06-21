@@ -5,7 +5,7 @@ Makefile
 server
 bug.md
 todo.md
-cmake-build-debug
+cmake-build*
 root
 .idea
 .DS_Store
