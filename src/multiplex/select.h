@@ -38,12 +38,12 @@ public:
     }
 
     void dispatch() {
-        timeval tv{1, 0};
+        timeval tt{1, 0};
         while(true) {
             fd_set rfds = _fds;
             // 设置为阻塞模式会导致子 select 无法检测到就绪 fd
             //int cnt = select(_mx + 1, &fds, NULL, NULL, NULL);
-            int cnt = select(MX, &rfds, NULL, NULL, &tv);
+            int cnt = select(MX, &rfds, NULL, NULL, &tt);
             if(cnt < 0) {
                 perror("select error");
                 exit(1);

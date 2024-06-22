@@ -47,7 +47,7 @@ public:
 
     void dispatch() {
         while(true) {
-            int cnt = poll(_fds, _mx, 0);
+            int cnt = poll(_fds, _mx, 1000);
             if(cnt < 0) {
                 perror("poll error");
                 exit(1);

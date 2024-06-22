@@ -56,7 +56,7 @@ public:
 
     void dispatch() {
         while(true) {
-            int cnt = epoll_wait(_fd, _evs, Config::EPOLL_MX_EVENT, 0);
+            int cnt = epoll_wait(_fd, _evs, Config::EPOLL_MX_EVENT, 1000);
             if(cnt < 0) {
                 perror("epoll wait");
                 exit(1);
