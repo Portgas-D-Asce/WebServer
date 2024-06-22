@@ -53,10 +53,13 @@ public:
 
     // sub reactor thread
     ssize_t send_http() {
-        // todo free lock queue help to remove this mutex
-        std::lock_guard<std::mutex> lg(_mtx);
+        {
+            std::lock_guard<std::mutex> lg(_mtx);
+            if(_que.empty()) return 0;
+        }
+
         ssize_t total = 0;
-        while(!_que.empty()) {
+        while(true) {
             auto &[ptr, cur, sz] = _que.front();
             // 还剩余多少数据要发送
             ssize_t rem = sz - cur;
@@ -66,16 +69,15 @@ public:
             if(cnt == -1) return -1;
             total += cnt;
 
-            // 没有写完数据而返回, 则必然是缓冲区满了阻塞了, 直接退出
-            if(cnt != rem) {
-                // 更新下次发送起始位置
-                cur += cnt;
-                break;
-            }
+            // 没有写完数据而返回, 则必然是缓冲区满了阻塞了, 更新下次发送起始位置, 直接退出
+            cur += cnt;
+            if(cnt != rem) break;
 
             // 写完剩余数据而返回, 任务完成，弹出消息, 释放 mmap 资源, 开始处理下一个消息
-            _que.pop();
             munmap((void*)ptr, sz);
+            std::lock_guard<std::mutex> lg(_mtx);
+            _que.pop();
+            if(_que.empty()) break;
         }
         return total;
     }
