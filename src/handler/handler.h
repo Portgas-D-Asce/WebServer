@@ -11,27 +11,18 @@ public:
     int operator()(std::string msg, std::function<void(const char*, size_t)> callback) {
         FileHandler file("../root");
         DirectoryHandler dir("../root");
-        std::string temp;
         std::map<std::string, std::string> mp = Http::parse(msg);
 
         std::string url = mp[Pron[Prop::URL]];
-        if(file.check(url)) {
-            temp = file.wrapper(url);
-        } else if(dir.check(url)) {
-            temp = dir.wrapper(url);
+        if(dir.check(url)) {
+            auto [ptr, len] = dir.wrapper(url);
+            // callback 返回消息
+            callback(ptr, len);
         } else {
-            temp = file.wrapper("/404.html");
+            if(!file.check(url)) url = "/404.html";
+            auto [ptr, len] = file.wrapper(url);
+            callback(ptr, len);
         }
-
-        char* _buff = (char*)mmap(nullptr, temp.size(), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-        if(_buff == (void*)-1) {
-            perror("xxxx");
-        }
-
-        memcpy(_buff, temp.c_str(), temp.size());
-
-        // callback 返回消息
-        callback(_buff, temp.size());
         return 1;
     }
 };

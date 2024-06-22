@@ -2,6 +2,7 @@
 #define WEBSERVER_FILE_HANDLER_H
 #include <string>
 #include <fstream>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include "../http/http.h"
 
@@ -11,16 +12,27 @@ private:
 public:
     explicit FileHandler(std::string root) : _root(root) {}
 
-    std::string read(const std::string& path) const {
-        std::ifstream input_file(path);
-        return std::string((std::istreambuf_iterator<char>(input_file)),
-                      std::istreambuf_iterator<char>());
-    }
+    std::pair<char*, size_t> wrapper(const std::string& path) const {
+        int fd = open((_root + path).c_str(), O_RDWR);
+        if(fd == -1) perror("open failed");
+        // 获取文件大小
+        size_t len = lseek(fd, 0, SEEK_END);
+        char* content = (char*)mmap(nullptr, len, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+        close(fd);
 
-    std::string wrapper(const std::string& path) const {
-        std::string content = read(_root + path);
+        // 封装响应头
         std::string suf = path.substr(path.find_last_of('.') + 1);
-        return Http::header_wrapper(Stat::OK, content, suf);
+        std::string header = Http::get_header(Stat::OK, suf, len);
+
+        size_t total = header.size() + len;
+        char* ptr = (char*)mmap(nullptr, total, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        // 拷贝响应头数据
+        memcpy(ptr, header.c_str(), header.size());
+        // 拷贝文件数据
+        memcpy(ptr + header.size(), content, len);
+        munmap(content, len);
+
+        return {ptr, total};
     }
 
     bool check(const std::string& url) const {

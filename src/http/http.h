@@ -38,7 +38,7 @@ public:
         return _mp;
     }
 
-    static std::string header_wrapper(Stat code, const std::string& s, std::string suf) {
+    static std::string get_header(Stat code, std::string suf, size_t length) {
         std::string t(Ven[Ver::HTTP_1_0] + Sen[Sep::SPACE] + Stan[code] + Sen[Sep::CRLF]);
 
         t.append(Pron[Prop::SERVER] + ": WebServer/0.0.1" + Sen[Sep::CRLF]);
@@ -47,18 +47,16 @@ public:
         t.append(Pron[Prop::CONTENT_TYPE] + Sen[Sep::COLON] +
                  Mime[suf] + Sen[Sep::CRLF]);
 
-	    t.append(Pron[Prop::CONNECTION] + Sen[Sep::COLON] +
-                "keep-alive" + Sen[Sep::CRLF]);
+        t.append(Pron[Prop::CONNECTION] + Sen[Sep::COLON] +
+                 "keep-alive" + Sen[Sep::CRLF]);
 
         t.append(Pron[Prop::CONTENT_LENGTH] + Sen[Sep::COLON] +
-                 std::to_string(s.size()) + Sen[Sep::CRLF]);
+                 std::to_string(length) + Sen[Sep::CRLF]);
 
         t.append(Sen[Sep::CRLF]);
-        t.append(s);
 
         return t;
     }
-
 private:
     static std::string _decode(const std::string& s) {
         int n = s.size();

@@ -3,6 +3,7 @@
 #include <string>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <sys/mman.h>
 #include "../http/http.h"
 #include "../html/html.h"
 
@@ -19,7 +20,7 @@ public:
         return info.st_size;
     }
 
-    std::string wrapper(std::string path) {
+    std::pair<char*, size_t> wrapper(std::string path) {
         if(!path.empty() && path.back() == Sen[Sep::SLASH][0]) path.pop_back();
 
         std::string dir = _root + path;
@@ -41,9 +42,14 @@ public:
         }
         content = Html::table_wrapper(content);
         content = Html::html_wrapper(path, content);
-        content = Http::header_wrapper(Stat::OK, content, "html");
-        //printf("xxx: %s\n", content.c_str());
-        return content;
+
+        std::string header = Http::get_header(Stat::OK, "html", content.size());
+        size_t total = header.size() + content.size();
+        char* res = (char*)mmap(nullptr, total, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        memcpy(res, header.c_str(), header.size());
+        memcpy(res + header.size(), content.c_str(), content.size());
+
+        return {res, total};
     }
 
     bool check(const std::string& url) const {
@@ -55,6 +61,5 @@ public:
         return info.st_mode & S_IFDIR;
     }
 };
-
 
 #endif //WEBSERVER_DIRECTORY_HANDLER_H
