@@ -38,7 +38,7 @@ public:
 
         _clients[fd]->callback(ptr, len);
 
-        // 新数据到来，重新激活写事件
+        // 新数据到来，重新激活写事件，必须在锁范围内
         _multiplex->mod(fd);
     }
 
@@ -100,7 +100,7 @@ public:
         // 2 和 3 顺序不能调换, 先 close fd, connection accept 立刻获得 fd 并初始化 connection, 与 2 释放 connection 冲突
         std::lock_guard<std::mutex> lg_event(_event_mtx);
 
-        // 1、从监听树上移除 fd
+        // 1、从监听树上移除 fd, 必须在锁范围内
         _multiplex->rm(fd);
 
         // 2、释放 connection,
