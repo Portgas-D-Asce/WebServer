@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <sys/mman.h>
+#include <cstring>
 #include "../http/http.h"
 #include "../html/html.h"
 

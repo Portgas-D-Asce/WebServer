@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <cstring>
 #include "../http/http.h"
 
 class FileHandler {

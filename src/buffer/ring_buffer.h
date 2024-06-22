@@ -30,7 +30,7 @@ public:
         return _buff.size();
     }
 
-    size_t clear() {
+    void clear() {
         _start = _end;
     }
 
