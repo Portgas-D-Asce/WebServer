@@ -38,12 +38,12 @@ public:
     }
 
     void dispatch() {
+        timeval tv{1, 0};
         while(true) {
-            fd_set rfds = _fds, wfds = _fds;
+            fd_set rfds = _fds;
             // 设置为阻塞模式会导致子 select 无法检测到就绪 fd
             //int cnt = select(_mx + 1, &fds, NULL, NULL, NULL);
-            timeval tv{0, 0};
-            int cnt = select(MX, &rfds, &wfds, NULL, &tv);
+            int cnt = select(MX, &rfds, NULL, NULL, &tv);
             if(cnt < 0) {
                 perror("select error");
                 exit(1);
@@ -54,12 +54,6 @@ public:
                 if(FD_ISSET(i, &rfds)) {
                     cnt--;
                     _read_callback(i);
-                }
-                if(FD_ISSET(i, &wfds)) {
-                    cnt--;
-                    // i maybe removed in read_callback
-                    // callback will check this, you needn't do it here
-                    _write_callback(i);
                 }
             }
         }
