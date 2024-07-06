@@ -3,6 +3,8 @@ project(WebServer)
 
 set(CMAKE_CXX_STANDARD 17)
 
+add_compile_options(-O2)
+
 add_executable(server src/server.cpp
         src/tcp/tcp_server.h
         src/multiplex/select.h

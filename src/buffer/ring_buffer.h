@@ -49,7 +49,8 @@ public:
     ssize_t recv_msg(const std::shared_ptr<Socket>& sock, const std::string& split, std::vector<std::string>& msgs) {
         ssize_t total = 0;
         // 数据读完之后从 center 处开始查找消息分隔符号
-        size_t center = _end;
+        // 读数据的时候可能会发生扩容，_start 会再次从 0 开始，此时记录 _end 将会无效，但记录偏移量总是没有问题的
+        size_t center = _end - _start;
 
         char buff[8192] = {0};
         while(true) {
@@ -63,7 +64,7 @@ public:
             total += cnt;
             write_msg(buff, cnt);
         }
-        msgs = _read_msg(split, center);
+        msgs = _read_msg(split, _start + center);
         return total;
     }
 private:
