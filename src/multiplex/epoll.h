@@ -58,6 +58,10 @@ public:
         while(true) {
             int cnt = epoll_wait(_fd, _evs, Config::EPOLL_MX_EVENT, 1000);
             if(cnt < 0) {
+                if(errno == EINTR || errno == EINVAL) {
+                    perror("epoll wait");
+                    continue;
+                }
                 perror("epoll wait");
                 exit(1);
             }
